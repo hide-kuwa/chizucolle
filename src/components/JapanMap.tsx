@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
 import type { Prefecture } from '../types';
-import { useAuth } from '../context/AuthContext'; // Assuming AuthContext provides memories
-// For now, we will use mock data for memories until Firestore is integrated.
+import { prefectures } from '../data/prefectures';
+
+// Mock data will be replaced by real data from a global context later.
 const mockMemories: { prefectureId: string, primaryPhotoUrl: string }[] = [
     { prefectureId: 'JP-13', primaryPhotoUrl: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=300' }
 ];
@@ -12,12 +13,6 @@ interface JapanMapProps {
 }
 
 export default function JapanMap({ onPrefectureClick }: JapanMapProps) {
-  // This should come from a real data source in the future
-  useAuth();
-  const prefectures: Prefecture[] = [
-      { id: 'JP-13', name: 'Tokyo', d: 'M340,272 L365,285 L360,295 L335,290 Z' },
-      // Dummy data for example. A full list is required.
-  ];
   const visitedPrefectureIds = mockMemories.map(m => m.prefectureId);
 
   return (
