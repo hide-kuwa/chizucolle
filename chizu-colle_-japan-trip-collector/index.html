@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chizu-Colle: Japan Trip Collector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* For a more appealing visited prefecture on the map */
+      .map-path {
+        transition: fill 0.3s ease, transform 0.2s ease, filter 0.3s ease;
+      }
+      .map-path-visited:hover {
+        transform: scale(1.03);
+        transform-origin: center;
+        filter: brightness(1.1);
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#3b82f6', // blue-500
+              'secondary': '#64748b', // slate-500
+              'accent': '#f97316', // orange-500
+              'background': '#f1f5f9', // slate-100
+              'text-primary': '#1e293b', // slate-800
+              'text-secondary': '#475569', // slate-600
+              'base-100': '#ffffff', // white
+              'base-200': '#e2e8f0', // slate-200
+              'base-300': '#cbd5e1', // slate-300
+            },
+            borderRadius: {
+              'box': '1rem',
+              'button': '0.5rem',
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-background text-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
