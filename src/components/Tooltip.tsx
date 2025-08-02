@@ -1,20 +1,15 @@
 'use client';
 import React from 'react';
+import { TooltipData } from '@/types';
 
-interface TooltipProps {
-  text: string;
-  x: number;
-  y: number;
-}
-
-export default function Tooltip({ text, x, y }: TooltipProps) {
-  if (x === 0 && y === 0) return null;
+export default function Tooltip({ data }: { data: TooltipData | null }) {
+  if (!data) return null;
   return (
     <div
       className="fixed z-50 px-3 py-1.5 text-sm font-semibold text-white bg-gray-900 rounded-md shadow-lg pointer-events-none"
-      style={{ transform: `translate(${x}px, ${y}px)` }}
+      style={{ left: `${data.x + 15}px`, top: `${data.y + 15}px` }}
     >
-      {text}
+      {data.text}
     </div>
   );
 }
