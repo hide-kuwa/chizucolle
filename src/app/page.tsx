@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
@@ -7,21 +6,20 @@ import Tooltip from '@/components/Tooltip';
 import type { Prefecture, TooltipData } from '@/types';
 
 export default function Home() {
-  const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
-  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
-    setSelectedPrefecture(prefecture);
-    console.log(`Clicked on ${prefecture.name}`);
-    // In the future, this will change the view to a gallery
+    // This will now work and provide feedback to the user
+    console.log(`Clicked on ${prefecture.name}! ID: ${prefecture.id}`);
+    alert(`You clicked on ${prefecture.name}!`);
   };
 
   const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
-    setTooltipData({ text: name, x: event.clientX, y: event.clientY });
+    setTooltip({ text: name, x: event.clientX, y: event.clientY });
   };
 
   const handleMouseLeave = () => {
-    setTooltipData(null);
+    setTooltip(null);
   };
 
   return (
@@ -34,13 +32,14 @@ export default function Home() {
       </header>
 
       <div className="flex-grow flex items-center justify-center p-4">
+        {/* ★ CRITICAL FIX: Pass all required event handlers as props */}
         <JapanMap 
           onPrefectureClick={handlePrefectureClick}
           onPrefectureHover={handlePrefectureHover}
           onMouseLeave={handleMouseLeave}
         />
       </div>
-      <Tooltip data={tooltipData} />
+      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
 }
