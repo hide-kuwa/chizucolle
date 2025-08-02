@@ -16,8 +16,9 @@ export default function JapanMap({ onPrefectureClick }: JapanMapProps) {
   const visitedPrefectureIds = mockMemories.map(m => m.prefectureId);
 
   return (
+    // The viewBox might need adjustment to match the source SVG's dimensions
     <div className="w-full max-w-4xl p-4 bg-white rounded-lg shadow-lg border">
-      <svg viewBox="0 0 500 450" className="w-full h-auto">
+      <svg viewBox="0 0 960 960" className="w-full h-auto">
         <defs>
           {mockMemories.map(memory => (
             <pattern key={`pattern-${memory.prefectureId}`} id={`pattern-${memory.prefectureId}`} patternUnits="userSpaceOnUse" width="100" height="100">
