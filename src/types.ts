@@ -7,7 +7,7 @@ export interface User {
 export interface Prefecture {
   id: string;
   name: string;
-  d: string;
+  d: string; // SVG path data
 }
 
 export interface Photo {
