@@ -1,19 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import Auth from '@/components/Auth'; // Assuming Auth component exists
+import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
-import type { Prefecture } from '@/types';
+import Tooltip from '@/components/Tooltip';
+import type { Prefecture, TooltipData } from '@/types';
 
 export default function Home() {
   const [view, setView] = useState<'map' | 'gallery'>('map');
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
     setSelectedPrefecture(prefecture);
-    // For now, just log it. We will build the gallery view next.
     console.log(`Clicked on ${prefecture.name}`);
+    // In the future, this will change the view to 'gallery'
     // setView('gallery');
+  };
+
+  const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
+    setTooltip({ text: name, x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
   };
 
   return (
@@ -27,7 +37,11 @@ export default function Home() {
 
       <div className="flex-grow flex items-center justify-center p-4">
         {view === 'map' && (
-          <JapanMap onPrefectureClick={handlePrefectureClick} />
+          <JapanMap
+            onPrefectureClick={handlePrefectureClick}
+            onPrefectureHover={handlePrefectureHover}
+            onMouseLeave={handleMouseLeave}
+          />
         )}
         {/* Gallery View will be added here in the next step */}
         {view === 'gallery' && selectedPrefecture && (
@@ -38,6 +52,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
 }
