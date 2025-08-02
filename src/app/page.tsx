@@ -7,23 +7,21 @@ import Tooltip from '@/components/Tooltip';
 import type { Prefecture, TooltipData } from '@/types';
 
 export default function Home() {
-  const [view, setView] = useState<'map' | 'gallery'>('map');
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
-  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
     setSelectedPrefecture(prefecture);
     console.log(`Clicked on ${prefecture.name}`);
-    // In the future, this will change the view to 'gallery'
-    // setView('gallery');
+    // In the future, this will change the view to a gallery
   };
 
   const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
-    setTooltip({ text: name, x: event.clientX, y: event.clientY });
+    setTooltipData({ text: name, x: event.clientX, y: event.clientY });
   };
 
   const handleMouseLeave = () => {
-    setTooltip(null);
+    setTooltipData(null);
   };
 
   return (
@@ -36,23 +34,13 @@ export default function Home() {
       </header>
 
       <div className="flex-grow flex items-center justify-center p-4">
-        {view === 'map' && (
-          <JapanMap
-            onPrefectureClick={handlePrefectureClick}
-            onPrefectureHover={handlePrefectureHover}
-            onMouseLeave={handleMouseLeave}
-          />
-        )}
-        {/* Gallery View will be added here in the next step */}
-        {view === 'gallery' && selectedPrefecture && (
-          <div>
-            <h2>{selectedPrefecture.name} Memories</h2>
-            <button onClick={() => setView('map')}>Back to Map</button>
-            {/* Photo gallery will be implemented here */}
-          </div>
-        )}
+        <JapanMap 
+          onPrefectureClick={handlePrefectureClick}
+          onPrefectureHover={handlePrefectureHover}
+          onMouseLeave={handleMouseLeave}
+        />
       </div>
-      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
+      <Tooltip data={tooltipData} />
     </main>
   );
 }
