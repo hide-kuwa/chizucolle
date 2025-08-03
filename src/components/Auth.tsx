@@ -31,13 +31,29 @@ export default function Auth() {
   return (
     <div>
       {user ? (
-        <div>
+        <div className="flex items-center">
           <p>Welcome, {user.displayName}!</p>
-          {user.photoURL && <img src={user.photoURL} alt="User avatar" width={50} height={50} style={{borderRadius: '50%'}} />}
-          <button onClick={handleSignOut} style={{marginLeft: '10px'}}>Sign Out</button>
+          {user.photoURL && (
+            <img
+              src={user.photoURL}
+              alt="User avatar"
+              className="ml-2 h-12 w-12 rounded-full"
+            />
+          )}
+          <button
+            onClick={handleSignOut}
+            className="ml-2 rounded-button bg-accent px-2 py-1 text-white"
+          >
+            Sign Out
+          </button>
         </div>
       ) : (
-        <button onClick={handleSignIn}>Sign in with Google</button>
+        <button
+          onClick={handleSignIn}
+          className="rounded-button bg-primary px-3 py-1 text-white"
+        >
+          Sign in with Google
+        </button>
       )}
     </div>
   );

@@ -38,7 +38,7 @@ export default function JapanMap({ memories, displayMode, onPrefectureClick }: J
   };
 
   return (
-    <div className="w-full max-w-4xl p-4 bg-white rounded-lg shadow-lg border">
+    <div className="w-full max-w-4xl rounded-box border bg-surface p-4 shadow-card">
       <svg viewBox="0 0 960 960" className="w-full h-auto">
         <defs>
           {memories.map(memory => (
@@ -55,10 +55,9 @@ export default function JapanMap({ memories, displayMode, onPrefectureClick }: J
                 key={p.id}
                 d={p.d}
                 fill={getFill(p.id)}
-                stroke="#334155" // slate-700
                 strokeWidth="0.5"
                 onClick={() => onPrefectureClick(p)}
-                className="cursor-pointer transition-all duration-150 ease-in-out hover:opacity-80"
+                className="cursor-pointer stroke-text-primary transition-all duration-150 ease-in-out hover:opacity-80"
               />
           ))}
         </g>

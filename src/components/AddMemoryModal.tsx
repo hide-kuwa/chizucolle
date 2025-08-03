@@ -50,7 +50,7 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-lg rounded bg-white p-6 shadow-lg">
+      <div className="w-full max-w-lg rounded-box bg-surface p-6 shadow-card">
         <h2 className="mb-4 text-xl font-bold">思い出を追加</h2>
         {prefectureId ? (
           <p className="mb-4 font-semibold">
@@ -61,7 +61,7 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
           </p>
         ) : (
           <select
-            className="mb-4 w-full border p-2"
+            className="mb-4 w-full rounded-button border p-2"
             value={selectedPrefecture}
             onChange={(e) => setSelectedPrefecture(e.target.value)}
           >
@@ -74,20 +74,20 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
         <input type="file" multiple onChange={handleFileChange} className="mb-4" />
         <div className="mb-4 grid grid-cols-3 gap-2">
           {previews.map((url, idx) => (
-            <img key={idx} src={url} alt="preview" className="h-24 w-full rounded object-cover" />
+            <img key={idx} src={url} alt="preview" className="h-24 w-full rounded-box object-cover" />
           ))}
         </div>
         <div className="flex justify-end space-x-2">
           <button
             onClick={onClose}
-            className="rounded bg-gray-300 px-4 py-2"
+            className="rounded-button bg-background px-4 py-2"
             disabled={loading}
           >
             キャンセル
           </button>
           <button
             onClick={handleUpload}
-            className="rounded bg-blue-500 px-4 py-2 text-white disabled:opacity-50"
+            className="rounded-button bg-primary px-4 py-2 text-white disabled:opacity-50"
             disabled={
               loading || (!prefectureId && !selectedPrefecture) || files.length === 0
             }
