@@ -16,6 +16,8 @@ export default function Home() {
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showPrefectureNames, setShowPrefectureNames] = useState(true);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -26,16 +28,28 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handlePrefectureClick = (prefecture: Prefecture) => {
+  const handlePrefectureClick = (
+    prefecture: Prefecture,
+    event: React.MouseEvent<SVGPathElement>,
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const position = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+
     if (isTouchDevice) {
       if (tappedPrefectureId === prefecture.id) {
+        setPopupPosition(position);
         setSelectedPrefecture(prefecture);
         setIsDetailModalOpen(true);
         setTappedPrefectureId(null);
       } else {
         setTappedPrefectureId(prefecture.id);
+        setIsDetailModalOpen(false);
       }
     } else {
+      setPopupPosition(position);
       setSelectedPrefecture(prefecture);
       setIsDetailModalOpen(true);
     }
@@ -59,7 +73,9 @@ export default function Home() {
     name: string,
     event: React.MouseEvent<SVGPathElement>,
   ) => {
-    setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
+    if (showPrefectureNames) {
+      setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
+    }
   };
 
   const handleMouseLeave = () => {
@@ -86,6 +102,18 @@ export default function Home() {
       </header>
 
       <div className="container mx-auto p-4 flex-grow flex flex-col items-center justify-center">
+        <div className="mb-4 bg-surface p-2 rounded-box shadow-card self-start">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPrefectureNames}
+              onChange={() => setShowPrefectureNames(!showPrefectureNames)}
+              className="form-checkbox h-5 w-5 text-primary"
+            />
+            <span className="text-text-secondary">都道府県名を表示</span>
+          </label>
+        </div>
+
         <JapanMap
           memories={memories}
           onPrefectureClick={handlePrefectureClick}
@@ -96,12 +124,13 @@ export default function Home() {
         />
       </div>
 
-      {selectedPrefecture && (
+      {selectedPrefecture && isDetailModalOpen && popupPosition && (
         <PrefectureDetailModal
           isOpen={isDetailModalOpen}
           onClose={closeDetailModal}
           prefecture={selectedPrefecture}
           onAddPhoto={openAddModalFromDetail}
+          position={popupPosition}
         />
       )}
 

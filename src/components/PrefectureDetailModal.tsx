@@ -8,9 +8,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAddPhoto: () => void;
+  position: { x: number; y: number };
 }
 
-export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto }: Props) {
+export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, position }: Props) {
   const { memories, updateMemoryStatus, user, signIn } = useGlobalContext();
   if (!isOpen) return null;
   const memory = memories.find(m => m.prefectureId === prefecture.id);
@@ -30,13 +31,38 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
     }
   };
 
+  const getModalStyle = () => {
+    if (!position) return {};
+    const modalWidth = 448;
+    const modalHeight = 350;
+
+    let left = position.x - modalWidth / 2;
+    let top = position.y - modalHeight / 2;
+
+    if (left < 16) left = 16;
+    if (top < 16) top = 16;
+    if (left + modalWidth > window.innerWidth - 16) {
+      left = window.innerWidth - modalWidth - 16;
+    }
+    if (top + modalHeight > window.innerHeight - 16) {
+      top = window.innerHeight - modalHeight - 16;
+    }
+
+    return {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+    };
+  };
+
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300"
+    <div
+      className="fixed inset-0 z-50 bg-black bg-opacity-50"
       onClick={onClose}
     >
-      <div 
-        className="bg-surface rounded-box shadow-card w-full max-w-lg p-6 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+      <div
+        style={getModalStyle()}
+        className="absolute bg-surface rounded-box shadow-card w-full max-w-lg p-6 transform transition-all duration-300 animate-fade-in-scale"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold text-primary mb-4">{prefecture.name}</h2>

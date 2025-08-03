@@ -5,7 +5,10 @@ import { prefectures } from '../data/prefectures';
 
 interface JapanMapProps {
   memories: Memory[];
-  onPrefectureClick: (prefecture: Prefecture) => void;
+  onPrefectureClick: (
+    prefecture: Prefecture,
+    event: React.MouseEvent<SVGPathElement>,
+  ) => void;
   onPrefectureHover: (
     name: string,
     event: React.MouseEvent<SVGPathElement>,
@@ -53,13 +56,13 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                 key={p.id}
                 d={p.d}
                 fill={getFill(p.id)}
-                strokeWidth="0.5"
-                onClick={() => onPrefectureClick(p)}
+                onClick={(e) => onPrefectureClick(p, e)}
                 onMouseEnter={(e) => onPrefectureHover(p.name, e)}
                 className={`
-                  cursor-pointer stroke-text-primary transition-all duration-200 ease-in-out
-                  hover:scale-105 hover:opacity-80 hover:drop-shadow-lg
-                  ${p.id === tappedPrefectureId ? 'animate-float' : ''}
+                  cursor-pointer stroke-text-secondary stroke-[0.5px]
+                  transition-all duration-200 ease-in-out
+                  hover:scale-105 hover:stroke-primary hover:stroke-[1.5px]
+                  ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
                 `}
               />
           ))}
