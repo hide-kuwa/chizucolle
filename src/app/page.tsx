@@ -36,15 +36,15 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gray-50">
-      <header className="w-full bg-white shadow-md">
+    <main className="flex min-h-screen flex-col bg-background">
+      <header className="w-full bg-surface shadow-card">
         <nav className="container mx-auto flex items-center justify-between px-4 py-2">
-          <h1 className="text-2xl font-bold text-blue-600">地図コレ</h1>
+          <h1 className="text-2xl font-bold text-primary">地図コレ</h1>
           <div className="flex items-center space-x-4">
             {user && (
               <button
                 onClick={() => openAddModal('')}
-                className="rounded bg-blue-500 px-3 py-1 text-white"
+                className="rounded-button bg-primary px-3 py-1 text-white"
               >
                 思い出を追加
               </button>
@@ -64,7 +64,7 @@ export default function Home() {
         ) : (
           <>
             {/* UI to change display mode */}
-            <div className="my-4 rounded bg-white p-2 shadow-sm">
+            <div className="my-4 rounded-box bg-surface p-2 shadow-card">
               <span className="mr-4 font-bold">Map Display Mode:</span>
               <button onClick={() => setDisplayMode('none')}>None</button>
               <button onClick={() => setDisplayMode('simple_color')} className="mx-2">

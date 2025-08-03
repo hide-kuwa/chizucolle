@@ -22,12 +22,12 @@ const GalleryView: React.FC<GalleryViewProps> = ({ prefecture, onBackToMap, onAd
   };
 
   return (
-    <div className="min-h-[70vh] rounded bg-white p-4 shadow-md">
+    <div className="min-h-[70vh] rounded-box bg-surface p-4 shadow-card">
       <header className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold">{prefecture.name}</h2>
         <button
           onClick={onBackToMap}
-          className="rounded bg-blue-500 px-3 py-1 text-white"
+          className="rounded-button bg-primary px-3 py-1 text-white"
         >
           地図に戻る
         </button>
@@ -38,7 +38,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ prefecture, onBackToMap, onAd
         <select
           value={status}
           onChange={handleStatusChange}
-          className="border p-1"
+          className="rounded-button border p-1"
         >
           <option value="lived">住んでいた</option>
           <option value="visited">訪れた</option>
@@ -53,7 +53,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ prefecture, onBackToMap, onAd
             key={photo.id}
             src={photo.url}
             alt={photo.name}
-            className="h-32 w-full rounded object-cover"
+            className="h-32 w-full rounded-box object-cover"
           />
         ))}
       </div>
@@ -61,7 +61,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ prefecture, onBackToMap, onAd
       <div className="mt-4 text-center">
         <button
           onClick={onAddPhoto}
-          className="rounded bg-green-500 px-4 py-2 text-white"
+          className="rounded-button bg-accent px-4 py-2 text-white"
         >
           さらに写真を追加する
         </button>
