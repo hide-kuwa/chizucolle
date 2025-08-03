@@ -1,26 +1,44 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { firestoreService } from '@/services/firestoreService';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
-import Tooltip from '@/components/Tooltip';
-import type { Prefecture, TooltipData } from '@/types';
+import type { Prefecture, Memory, VisitStatus } from '@/types';
+
+// Define the possible display modes for the map
+type MapDisplayMode = 'simple_color' | 'photo' | 'none';
 
 export default function Home() {
-  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const { user } = useAuth();
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [displayMode, setDisplayMode] = useState<MapDisplayMode>('photo');
 
-  const handlePrefectureClick = (prefecture: Prefecture) => {
-    // This will now work and provide feedback to the user
-    console.log(`Clicked on ${prefecture.name}! ID: ${prefecture.id}`);
-    alert(`You clicked on ${prefecture.name}!`);
-  };
+  // Fetch memories from Firestore when user logs in
+  useEffect(() => {
+    if (user) {
+      firestoreService.getMemories(user.uid).then(setMemories);
+    } else {
+      setMemories([]);
+    }
+  }, [user]);
 
-  const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
-    setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
-  };
+  const handlePrefectureClick = async (prefecture: Prefecture) => {
+    if (!user) {
+      alert('Please sign in to record your visit!');
+      return;
+    }
+    // Example of how to cycle through statuses. A real UI would have a dropdown/modal.
+    const currentMemory = memories.find(m => m.prefectureId === prefecture.id);
+    const currentStatus = currentMemory?.status || 'unvisited';
+    const statuses: VisitStatus[] = ['unvisited', 'passed_through', 'visited', 'lived'];
+    const nextStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
 
-  const handleMouseLeave = () => {
-    setTooltip(null);
+    await firestoreService.updateMemoryStatus(user.uid, prefecture.id, nextStatus);
+    // Refetch memories to update the UI
+    firestoreService.getMemories(user.uid).then(setMemories);
+
+    alert(`${prefecture.name} status updated to: ${nextStatus}`);
   };
 
   return (
@@ -32,17 +50,21 @@ export default function Home() {
         </nav>
       </header>
 
-      <div className="flex-grow flex items-center justify-center p-4">
-        {/* ★ CRITICAL FIX: Pass all three required event handlers as props */}
+      <div className="container mx-auto p-4">
+        {/* UI to change display mode */}
+        <div className="my-4 p-2 bg-white rounded shadow-sm">
+          <span className="font-bold mr-4">Map Display Mode:</span>
+          <button onClick={() => setDisplayMode('none')}>None</button>
+          <button onClick={() => setDisplayMode('simple_color')} className="mx-2">Color</button>
+          <button onClick={() => setDisplayMode('photo')}>Photo</button>
+        </div>
+
         <JapanMap 
+          memories={memories}
+          displayMode={displayMode}
           onPrefectureClick={handlePrefectureClick}
-          onPrefectureHover={handlePrefectureHover}
-          onMouseLeave={handleMouseLeave}
         />
       </div>
-
-      {/* This component will now receive data from the hover handler */}
-      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
 }

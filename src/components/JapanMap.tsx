@@ -1,49 +1,66 @@
 'use client';
 import React from 'react';
-import type { Prefecture } from '../types';
-import { prefectures } from '../data/prefectures'; // ★ CRITICAL: Import the master data!
+import type { Prefecture, Memory, VisitStatus } from '../types';
+import { prefectures } from '../data/prefectures';
 
-// Mock data for visited state will be replaced by real data from a global context later.
-const mockMemories: { prefectureId: string, primaryPhotoUrl: string }[] = [
-    { prefectureId: 'JP-13', primaryPhotoUrl: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=300' }
-];
+type MapDisplayMode = 'simple_color' | 'photo' | 'none';
 
 interface JapanMapProps {
+  memories: Memory[];
+  displayMode: MapDisplayMode;
   onPrefectureClick: (prefecture: Prefecture) => void;
-  onPrefectureHover: (name: string, event: React.MouseEvent) => void;
-  onMouseLeave: () => void;
 }
 
-export default function JapanMap({ onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
-  const visitedPrefectureIds = mockMemories.map(m => m.prefectureId);
+const statusColors: Record<VisitStatus, string> = {
+  unvisited: '#E2E8F0', // slate-200
+  passed_through: '#bae6fd', // sky-200
+  visited: '#6ee7b7', // emerald-300
+  lived: '#fca5a5', // red-400
+};
+
+export default function JapanMap({ memories, displayMode, onPrefectureClick }: JapanMapProps) {
+
+  const getFill = (prefectureId: string): string => {
+    const memory = memories.find(m => m.prefectureId === prefectureId);
+    const status = memory?.status || 'unvisited';
+
+    if (displayMode === 'none' || status === 'unvisited') {
+      return statusColors.unvisited;
+    }
+
+    if (displayMode === 'photo' && memory?.photos && memory.photos.length > 0) {
+      // Use the first photo as the primary one for the pattern
+      return `url(#pattern-${prefectureId})`;
+    }
+
+    // Fallback to simple color
+    return statusColors[status];
+  };
 
   return (
     <div className="w-full max-w-4xl p-4 bg-white rounded-lg shadow-lg border">
-      <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave}>
+      <svg viewBox="0 0 960 960" className="w-full h-auto">
         <defs>
-          {mockMemories.map(memory => (
-            <pattern key={`pattern-${memory.prefectureId}`} id={`pattern-${memory.prefectureId}`} patternUnits="userSpaceOnUse" width="100" height="100">
-              <image href={memory.primaryPhotoUrl} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-            </pattern>
+          {memories.map(memory => (
+            (memory.photos && memory.photos.length > 0) && (
+              <pattern key={`pattern-${memory.prefectureId}`} id={`pattern-${memory.prefectureId}`} patternUnits="userSpaceOnUse" width="100" height="100">
+                <image href={memory.photos[0].url} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            )
           ))}
         </defs>
         <g>
-          {/* ★ CRITICAL: Ensure we are mapping over the imported 'prefectures' constant */}
-          {prefectures.map(p => { 
-            const isVisited = visitedPrefectureIds.includes(p.id);
-            return (
+          {prefectures.map(p => (
               <path
                 key={p.id}
                 d={p.d}
-                fill={isVisited ? `url(#pattern-${p.id})` : '#f1f5f9'}
-                stroke="#64748b"
+                fill={getFill(p.id)}
+                stroke="#334155" // slate-700
                 strokeWidth="0.5"
                 onClick={() => onPrefectureClick(p)}
-                onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-                className="cursor-pointer transition-all duration-150 ease-in-out hover:opacity-80 hover:stroke-blue-500 hover:stroke-width-1"
+                className="cursor-pointer transition-all duration-150 ease-in-out hover:opacity-80"
               />
-            );
-          })}
+          ))}
         </g>
       </svg>
     </div>
