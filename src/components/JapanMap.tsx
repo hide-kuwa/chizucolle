@@ -3,11 +3,8 @@ import React from 'react';
 import type { Prefecture, Memory, VisitStatus } from '../types';
 import { prefectures } from '../data/prefectures';
 
-type MapDisplayMode = 'simple_color' | 'photo' | 'none';
-
 interface JapanMapProps {
   memories: Memory[];
-  displayMode: MapDisplayMode;
   onPrefectureClick: (prefecture: Prefecture) => void;
   onPrefectureHover: (
     name: string,
@@ -23,22 +20,16 @@ const statusColors: Record<VisitStatus, string> = {
   lived: '#fca5a5', // red-400
 };
 
-export default function JapanMap({ memories, displayMode, onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
+export default function JapanMap({ memories, onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
 
   const getFill = (prefectureId: string): string => {
     const memory = memories.find(m => m.prefectureId === prefectureId);
     const status = memory?.status || 'unvisited';
 
-    if (displayMode === 'none' || status === 'unvisited') {
-      return statusColors.unvisited;
-    }
-
-    if (displayMode === 'photo' && memory?.photos && memory.photos.length > 0) {
-      // Use the first photo as the primary one for the pattern
+    if (memory?.photos && memory.photos.length > 0) {
       return `url(#pattern-${prefectureId})`;
     }
 
-    // Fallback to simple color
     return statusColors[status];
   };
 
@@ -63,7 +54,7 @@ export default function JapanMap({ memories, displayMode, onPrefectureClick, onP
                 strokeWidth="0.5"
                 onClick={() => onPrefectureClick(p)}
                 onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-                className="cursor-pointer stroke-text-primary transition-all duration-150 ease-in-out hover:opacity-80"
+                className="cursor-pointer stroke-text-primary transition-all duration-200 ease-in-out hover:scale-105 hover:opacity-80 hover:drop-shadow-lg"
               />
           ))}
         </g>
