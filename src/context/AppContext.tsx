@@ -6,6 +6,7 @@ import { authService } from '@/services/authService';
 import { driveService } from '@/services/driveService';
 import { firestoreService } from '@/services/firestoreService';
 import { auth } from '@/lib/firebase';
+import { getRedirectResult } from 'firebase/auth';
 
 const LOCAL_STORAGE_KEY = 'chizucolle_memories';
 
@@ -40,6 +41,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   useEffect(() => {
+    getRedirectResult(auth)
+      .then(result => {
+        if (result) {
+          console.log('Successfully signed in with redirect', result.user);
+        }
+      })
+      .catch(error => {
+        console.error('Error getting redirect result', error);
+      });
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged(async authUser => {
       setUser(authUser);
       if (authUser) {
@@ -67,8 +80,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const signIn = async () => {
     setLoading(true);
-    await authService.signInWithGoogle();
-    // onAuthStateChanged will update state
+    try {
+      await authService.signInWithGoogle();
+      // onAuthStateChanged will update state
+    } catch (error) {
+      console.error("Sign in failed", error);
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
