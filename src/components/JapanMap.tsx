@@ -39,7 +39,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
   };
 
   return (
-    <div className="w-full max-w-4xl rounded-box border bg-surface p-4 shadow-card">
+    <div className="w-full max-w-4xl mx-auto rounded-box border bg-surface p-4 shadow-card">
       <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
         <defs>
           {memories.map(memory => (
@@ -61,7 +61,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                 className={`
                   cursor-pointer stroke-text-secondary stroke-[0.5px]
                   transition-all duration-200 ease-in-out
-                  hover:scale-105 hover:stroke-primary hover:stroke-[1.5px]
+                  hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
                   ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
                 `}
               />

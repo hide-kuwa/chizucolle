@@ -1,29 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { prefectures } from '@/data/prefectures';
 
 interface AddMemoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (prefectureId: string, files: File[]) => Promise<void>;
-  /**
-   * Optional prefectureId. When provided the prefecture selector
-   * is hidden and this id will be used for uploads.
-   */
+  /** Optional prefecture id. When provided the selector is hidden. */
   prefectureId?: string;
 }
 
 const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUpload, prefectureId }) => {
-  const [selectedPrefecture, setSelectedPrefecture] = useState(prefectureId || '');
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Reset selected prefecture when modal opens/closes or when prefectureId changes
-    setSelectedPrefecture(prefectureId || '');
-  }, [prefectureId, isOpen]);
 
   if (!isOpen) return null;
 
@@ -34,12 +25,10 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
   };
 
   const handleUpload = async () => {
-    const id = prefectureId || selectedPrefecture;
-    if (!id || files.length === 0) return;
+    if (!prefectureId || files.length === 0) return;
     setLoading(true);
     try {
-      await onUpload(id, files);
-      setSelectedPrefecture('');
+      await onUpload(prefectureId, files);
       setFiles([]);
       setPreviews([]);
       onClose();
@@ -49,48 +38,55 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-lg rounded-box bg-surface p-6 shadow-card">
-        <h2 className="mb-4 text-xl font-bold">思い出を追加</h2>
-        {prefectureId ? (
-          <p className="mb-4 font-semibold">
-            {
-              prefectures.find(p => p.id === prefectureId)?.name ||
-              '選択された都道府県'
-            }
-          </p>
-        ) : (
-          <select
-            className="mb-4 w-full rounded-button border p-2"
-            value={selectedPrefecture}
-            onChange={(e) => setSelectedPrefecture(e.target.value)}
-          >
-            <option value="">都道府県を選択</option>
-            {prefectures.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
-        <input type="file" multiple onChange={handleFileChange} className="mb-4" />
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          {previews.map((url, idx) => (
-            <img key={idx} src={url} alt="preview" className="h-24 w-full rounded-box object-cover" />
-          ))}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 animate-fade-in-scale">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-background p-4">
+          <h2 className="text-lg font-bold text-primary">思い出の写真を追加</h2>
+          <button onClick={onClose} className="rounded-full p-1 transition-colors hover:bg-slate-200">✕</button>
         </div>
-        <div className="flex justify-end space-x-2">
+
+        <div className="space-y-4 p-6">
+          <p className="font-semibold text-text-primary">
+            {prefectureId ? prefectures.find(p => p.id === prefectureId)?.name : '都道府県を選択'}
+          </p>
+
+          <div>
+            <label htmlFor="file-upload" className="block text-sm font-medium text-text-secondary mb-2">
+              写真を選択 (複数選択可)
+            </label>
+            <div className="flex items-center justify-center w-full">
+              <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-background hover:bg-slate-200">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">クリック</span> またはドラッグ&ドロップ
+                  </p>
+                </div>
+                <input id="file-upload" type="file" multiple onChange={handleFileChange} className="hidden" />
+              </label>
+            </div>
+          </div>
+
+          {previews.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {previews.map((url, idx) => (
+                <img key={idx} src={url} alt="preview" className="h-24 w-full rounded-md object-cover" />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-3 border-t border-background p-4">
           <button
             onClick={onClose}
-            className="rounded-button bg-background px-4 py-2"
+            className="rounded-button bg-background px-4 py-2 font-semibold text-text-secondary transition hover:bg-slate-200"
             disabled={loading}
           >
             キャンセル
           </button>
           <button
             onClick={handleUpload}
-            className="rounded-button bg-primary px-4 py-2 text-white disabled:opacity-50"
-            disabled={
-              loading || (!prefectureId && !selectedPrefecture) || files.length === 0
-            }
+            className="rounded-button bg-primary px-4 py-2 font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+            disabled={loading || !prefectureId || files.length === 0}
           >
             {loading ? 'アップロード中...' : 'アップロード'}
           </button>
