@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>
+      <body className="bg-background text-text-primary">
         <AuthProvider>
           <AppProvider>
             {children}
