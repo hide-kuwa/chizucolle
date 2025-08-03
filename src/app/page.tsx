@@ -37,7 +37,10 @@ export default function Home() {
     }
   };
 
-  const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
+  const handlePrefectureHover = (
+    name: string,
+    event: React.MouseEvent<SVGPathElement>,
+  ) => {
     setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
   };
 
