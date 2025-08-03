@@ -1,9 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { User, Memory } from '../types';
-import { authService } from '../services/authService';
-import { driveService } from '../services/driveService';
+import type { User, Memory } from '@/types';
+import { authService } from '@/services/authService';
+import { driveService } from '@/services/driveService';
+import { firestoreService } from '@/services/firestoreService';
+import { auth } from '@/lib/firebase';
 
 interface AppContextType {
   user: User | null;
@@ -12,6 +14,7 @@ interface AppContextType {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   addMemory: (prefectureId: string, photos: File[]) => Promise<void>;
+  refreshMemories: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -22,18 +25,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [memories, setMemories] = useState<Memory[]>([]);
 
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged(authUser => {
+    const unsubscribe = authService.onAuthStateChanged(async authUser => {
       setUser(authUser);
       if (authUser) {
-        // In a real app, you'd fetch memories from a database here.
-        driveService.getInitialMemories().then(initialMemories => {
-            setMemories(initialMemories);
-            setLoading(false);
-        });
+        const fetched = await firestoreService.getMemories(authUser.uid);
+        setMemories(fetched);
       } else {
         setMemories([]);
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -41,7 +41,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signIn = async () => {
     setLoading(true);
     await authService.signInWithGoogle();
-    // onAuthStateChanged will handle setting the user
+    // onAuthStateChanged will update state
   };
 
   const signOut = async () => {
@@ -50,34 +50,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // onAuthStateChanged will handle cleanup
   };
 
-  const addMemory = useCallback(async (prefectureId: string, photos: File[]) => {
-    if (!user) throw new Error('User must be logged in to add memories.');
-    setLoading(true);
-    try {
-      const newPhotos = await driveService.uploadPhotos(prefectureId, photos);
-      setMemories(prevMemories => {
-        const existingMemoryIndex = prevMemories.findIndex(m => m.prefectureId === prefectureId);
-        if (existingMemoryIndex > -1) {
-          const updatedMemories = [...prevMemories];
-          const existingMemory = updatedMemories[existingMemoryIndex];
-          existingMemory.photos.push(...newPhotos);
-          return updatedMemories;
-        } else {
-          return [...prevMemories, {
-            prefectureId,
-            photos: newPhotos,
-            status: 'visited',
-          }];
-        }
-      });
-    } catch (error) {
-      console.error('Failed to add memory:', error);
-    } finally {
-      setLoading(false);
-    }
+  const addMemory = useCallback(
+    async (prefectureId: string, photos: File[]) => {
+      if (!user) throw new Error('User must be logged in to add memories.');
+      setLoading(true);
+      try {
+        const accessToken = await auth.currentUser?.getIdToken();
+        if (!accessToken) throw new Error('Missing access token');
+        const uploaded = await driveService.uploadPhotos(accessToken, prefectureId, photos);
+        await firestoreService.addPhotosToMemory(user.uid, prefectureId, uploaded);
+        setMemories(prev => {
+          const index = prev.findIndex(m => m.prefectureId === prefectureId);
+          if (index > -1) {
+            const updated = [...prev];
+            const memory = updated[index];
+            memory.photos = [...memory.photos, ...uploaded];
+            memory.status = 'visited';
+            return updated;
+          }
+          return [...prev, { prefectureId, status: 'visited', photos: uploaded }];
+        });
+      } catch (error) {
+        console.error('Failed to add memory:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user],
+  );
+
+  const refreshMemories = useCallback(async () => {
+    if (!user) return;
+    const fetched = await firestoreService.getMemories(user.uid);
+    setMemories(fetched);
   }, [user]);
 
-  const value = { user, loading, memories, signIn, signOut, addMemory };
+  const value = { user, loading, memories, signIn, signOut, addMemory, refreshMemories };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
@@ -89,3 +97,4 @@ export const useGlobalContext = () => {
   }
   return context;
 };
+
