@@ -5,10 +5,9 @@ import {
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
-import { auth } from "../lib/firebase"; // Import from our real firebase.ts
-import { User } from "../types"; // Assuming a simple User type exists in src/types.ts
+import { auth } from "../lib/firebase";
+import { User } from "../types";
 
-// This function maps the user object from Firebase to our app's User type
 const formatUser = (user: FirebaseUser): User => ({
   uid: user.uid,
   displayName: user.displayName,
@@ -18,7 +17,8 @@ const formatUser = (user: FirebaseUser): User => ({
 export const authService = {
   signInWithGoogle: async (): Promise<User> => {
     const provider = new GoogleAuthProvider();
-    // This scope is crucial for the future Google Drive integration
+    // ★★★【ここが、最後の鍵だ！】★★★
+    // ログインの、まさにその瞬間に、ドライブへのアクセス許可も、同時に要求する！
     provider.addScope('https://www.googleapis.com/auth/drive.file');
 
     const result = await signInWithPopup(auth, provider);
@@ -33,7 +33,6 @@ export const authService = {
     const unsubscribe = firebaseOnAuthStateChanged(auth, (user: FirebaseUser | null) => {
       callback(user ? formatUser(user) : null);
     });
-    // Return the unsubscribe function for cleanup
     return unsubscribe;
   },
 };
