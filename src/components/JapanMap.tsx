@@ -11,6 +11,8 @@ interface JapanMapProps {
     event: React.MouseEvent<SVGPathElement>,
   ) => void;
   onMouseLeave: () => void;
+  tappedPrefectureId: string | null;
+  onMapBackgroundClick: () => void;
 }
 
 const statusColors: Record<VisitStatus, string> = {
@@ -20,7 +22,7 @@ const statusColors: Record<VisitStatus, string> = {
   lived: '#fca5a5', // red-400
 };
 
-export default function JapanMap({ memories, onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
+export default function JapanMap({ memories, onPrefectureClick, onPrefectureHover, onMouseLeave, tappedPrefectureId, onMapBackgroundClick }: JapanMapProps) {
 
   const getFill = (prefectureId: string): string => {
     const memory = memories.find(m => m.prefectureId === prefectureId);
@@ -35,7 +37,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
 
   return (
     <div className="w-full max-w-4xl rounded-box border bg-surface p-4 shadow-card">
-      <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave}>
+      <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
         <defs>
           {memories.map(memory => (
             (memory.photos && memory.photos.length > 0) && (
@@ -45,7 +47,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
             )
           ))}
         </defs>
-        <g>
+        <g onClick={(e) => e.stopPropagation()}>
           {prefectures.map(p => (
               <path
                 key={p.id}
@@ -54,7 +56,11 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                 strokeWidth="0.5"
                 onClick={() => onPrefectureClick(p)}
                 onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-                className="cursor-pointer stroke-text-primary transition-all duration-200 ease-in-out hover:scale-105 hover:opacity-80 hover:drop-shadow-lg"
+                className={`
+                  cursor-pointer stroke-text-primary transition-all duration-200 ease-in-out
+                  hover:scale-105 hover:opacity-80 hover:drop-shadow-lg
+                  ${p.id === tappedPrefectureId ? 'animate-float' : ''}
+                `}
               />
           ))}
         </g>
