@@ -4,12 +4,13 @@ import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
 import PrefectureDetailModal from '@/components/PrefectureDetailModal';
+import LoginModal from '@/components/LoginModal';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 
 export default function Home() {
-  const { user, memories, addMemory, refreshMemories } = useGlobalContext();
+  const { user, memories, addMemory, refreshMemories, signIn } = useGlobalContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
@@ -18,6 +19,7 @@ export default function Home() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [showPrefectureNames, setShowPrefectureNames] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -64,9 +66,14 @@ export default function Home() {
     setSelectedPrefecture(null);
   };
 
-  const openAddModalFromDetail = () => {
-    setIsDetailModalOpen(false);
-    setIsModalOpen(true);
+  const handleAddPhotoRequest = () => {
+    if (user) {
+      setIsDetailModalOpen(false);
+      setIsModalOpen(true);
+    } else {
+      setIsDetailModalOpen(false);
+      setIsLoginModalOpen(true);
+    }
   };
 
   const handlePrefectureHover = (
@@ -129,7 +136,7 @@ export default function Home() {
           isOpen={isDetailModalOpen}
           onClose={closeDetailModal}
           prefecture={selectedPrefecture}
-          onAddPhoto={openAddModalFromDetail}
+          onAddPhoto={handleAddPhotoRequest}
           position={popupPosition}
         />
       )}
@@ -141,6 +148,14 @@ export default function Home() {
         onUpload={async (prefectureId, files) => {
           await addMemory(prefectureId, files);
           await refreshMemories();
+        }}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSignIn={() => {
+          signIn();
+          setIsLoginModalOpen(false);
         }}
       />
       {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
