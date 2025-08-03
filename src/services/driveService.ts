@@ -1,72 +1,31 @@
-import type { Photo, Memory } from '../types';
+import type { Photo } from '../types';
 
-// This is a mock implementation of a Google Drive service.
-// It simulates uploading files and retrieving them, as if a backend were managing it.
-
-const MOCK_DB: { [key: string]: Photo[] } = {
-    'JP-13': [ // Tokyo
-        { id: 'tokyo-1', name: 'Shibuya Crossing', url: 'https://picsum.photos/seed/shibuya/800/600' },
-        { id: 'tokyo-2', name: 'Tokyo Tower', url: 'https://picsum.photos/seed/tokyotower/800/600' },
-    ],
-    'JP-26': [ // Kyoto
-        { id: 'kyoto-1', name: 'Kinkaku-ji', url: 'https://picsum.photos/seed/kinkakuji/800/600' },
-    ],
-};
-
-const getObjectURL = (file: File): Promise<string> => {
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(file);
-    });
-}
-
+// Service responsible for communicating with our backend API which in turn
+// uploads files to the user's Google Drive.
 export const driveService = {
-  getInitialMemories: (): Promise<Memory[]> => {
-    console.log("Fetching initial memories...");
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const memories: Memory[] = Object.entries(MOCK_DB).map(([prefectureId, photos]) => ({
-            prefectureId,
-            status: 'visited',
-            photos,
-        }));
-        resolve(memories);
-      }, 500);
+  uploadPhotos: async (
+    accessToken: string,
+    prefectureId: string,
+    files: File[],
+  ): Promise<Photo[]> => {
+    const formData = new FormData();
+    formData.append('prefectureId', prefectureId);
+    files.forEach(file => formData.append('files', file));
+
+    const response = await fetch('/api/drive/upload', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
     });
-  },
 
-  uploadPhotos: async (prefectureId: string, files: File[]): Promise<Photo[]> => {
-    console.log(`Simulating upload of ${files.length} photos to prefecture ${prefectureId}...`);
-    // This simulates a server-side proxy model.
-
-    const uploadedPhotos: Photo[] = [];
-
-    for (const file of files) {
-        await new Promise(res => setTimeout(res, 300)); // Simulate network latency per file
-        const newPhoto: Photo = {
-            id: `new-${Date.now()}-${Math.random()}`,
-            name: file.name,
-            url: await getObjectURL(file), // Using data URL as a temporary representation
-        };
-        uploadedPhotos.push(newPhoto);
-
-        if (!MOCK_DB[prefectureId]) {
-            MOCK_DB[prefectureId] = [];
-        }
-        MOCK_DB[prefectureId].push(newPhoto);
+    if (!response.ok) {
+      throw new Error('Failed to upload photos to Google Drive');
     }
 
-    console.log("Upload simulation complete.");
-    return uploadedPhotos;
-  },
-
-  getPhotosForPrefecture: (prefectureId: string): Promise<Photo[]> => {
-    console.log(`Fetching photos for ${prefectureId}...`);
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(MOCK_DB[prefectureId] || []);
-      }, 500);
-    });
+    const data = await response.json();
+    return data.photos as Photo[];
   },
 };
+
