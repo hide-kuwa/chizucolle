@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { User, Memory } from '@/types';
+import type { User, Memory, VisitStatus } from '@/types';
 import { authService } from '@/services/authService';
 import { driveService } from '@/services/driveService';
 import { firestoreService } from '@/services/firestoreService';
@@ -15,6 +15,7 @@ interface AppContextType {
   signOut: () => Promise<void>;
   addMemory: (prefectureId: string, photos: File[]) => Promise<void>;
   refreshMemories: () => Promise<void>;
+  updateMemoryStatus: (prefectureId: string, status: VisitStatus) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -85,7 +86,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMemories(fetched);
   }, [user]);
 
-  const value = { user, loading, memories, signIn, signOut, addMemory, refreshMemories };
+  const updateMemoryStatus = useCallback(
+    async (prefectureId: string, status: VisitStatus) => {
+      if (!user) throw new Error('User must be logged in to update status.');
+      setLoading(true);
+      try {
+        await firestoreService.updateMemoryStatus(user.uid, prefectureId, status);
+        await refreshMemories();
+      } catch (error) {
+        console.error('Failed to update memory status:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, refreshMemories],
+  );
+
+  const value = {
+    user,
+    loading,
+    memories,
+    signIn,
+    signOut,
+    addMemory,
+    refreshMemories,
+    updateMemoryStatus,
+  };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
