@@ -1,19 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import Auth from '@/components/Auth'; // Assuming Auth component exists
+import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
-import type { Prefecture } from '@/types';
+import Tooltip from '@/components/Tooltip';
+import type { Prefecture, TooltipData } from '@/types';
 
 export default function Home() {
-  const [view, setView] = useState<'map' | 'gallery'>('map');
-  const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
-    setSelectedPrefecture(prefecture);
-    // For now, just log it. We will build the gallery view next.
-    console.log(`Clicked on ${prefecture.name}`);
-    // setView('gallery');
+    // This will now work and provide feedback to the user
+    console.log(`Clicked on ${prefecture.name}! ID: ${prefecture.id}`);
+    alert(`You clicked on ${prefecture.name}!`);
+  };
+
+  const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
+    setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
   };
 
   return (
@@ -26,18 +33,16 @@ export default function Home() {
       </header>
 
       <div className="flex-grow flex items-center justify-center p-4">
-        {view === 'map' && (
-          <JapanMap onPrefectureClick={handlePrefectureClick} />
-        )}
-        {/* Gallery View will be added here in the next step */}
-        {view === 'gallery' && selectedPrefecture && (
-          <div>
-            <h2>{selectedPrefecture.name} Memories</h2>
-            <button onClick={() => setView('map')}>Back to Map</button>
-            {/* Photo gallery will be implemented here */}
-          </div>
-        )}
+        {/* ★ CRITICAL FIX: Pass all three required event handlers as props */}
+        <JapanMap 
+          onPrefectureClick={handlePrefectureClick}
+          onPrefectureHover={handlePrefectureHover}
+          onMouseLeave={handleMouseLeave}
+        />
       </div>
+
+      {/* This component will now receive data from the hover handler */}
+      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
 }
