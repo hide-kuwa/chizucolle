@@ -9,6 +9,8 @@ interface JapanMapProps {
   memories: Memory[];
   displayMode: MapDisplayMode;
   onPrefectureClick: (prefecture: Prefecture) => void;
+  onPrefectureHover: (name: string, event: React.MouseEvent) => void;
+  onMouseLeave: () => void;
 }
 
 const statusColors: Record<VisitStatus, string> = {
@@ -18,7 +20,7 @@ const statusColors: Record<VisitStatus, string> = {
   lived: '#fca5a5', // red-400
 };
 
-export default function JapanMap({ memories, displayMode, onPrefectureClick }: JapanMapProps) {
+export default function JapanMap({ memories, displayMode, onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
 
   const getFill = (prefectureId: string): string => {
     const memory = memories.find(m => m.prefectureId === prefectureId);
@@ -39,7 +41,7 @@ export default function JapanMap({ memories, displayMode, onPrefectureClick }: J
 
   return (
     <div className="w-full max-w-4xl rounded-box border bg-surface p-4 shadow-card">
-      <svg viewBox="0 0 960 960" className="w-full h-auto">
+      <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave}>
         <defs>
           {memories.map(memory => (
             (memory.photos && memory.photos.length > 0) && (
@@ -57,6 +59,7 @@ export default function JapanMap({ memories, displayMode, onPrefectureClick }: J
                 fill={getFill(p.id)}
                 strokeWidth="0.5"
                 onClick={() => onPrefectureClick(p)}
+                onMouseEnter={(e) => onPrefectureHover(p.name, e)}
                 className="cursor-pointer stroke-text-primary transition-all duration-150 ease-in-out hover:opacity-80"
               />
           ))}

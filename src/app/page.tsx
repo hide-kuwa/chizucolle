@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
 import GalleryView from '@/components/GalleryView';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
+import Tooltip from '@/components/Tooltip';
 
 // Define the possible display modes for the map
 type MapDisplayMode = 'simple_color' | 'photo' | 'none';
@@ -16,6 +17,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
   const [modalPrefectureId, setModalPrefectureId] = useState<string>('');
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const openAddModal = (prefectureId: string) => {
     setModalPrefectureId(prefectureId);
@@ -33,6 +35,14 @@ export default function Home() {
     } else {
       openAddModal(prefecture.id);
     }
+  };
+
+  const handlePrefectureHover = (name: string, event: React.MouseEvent) => {
+    setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
   };
 
   return (
@@ -77,6 +87,8 @@ export default function Home() {
               memories={memories}
               displayMode={displayMode}
               onPrefectureClick={handlePrefectureClick}
+              onPrefectureHover={handlePrefectureHover}
+              onMouseLeave={handleMouseLeave}
             />
           </>
         )}
@@ -91,6 +103,7 @@ export default function Home() {
           await refreshMemories();
         }}
       />
+      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
 }
