@@ -3,38 +3,36 @@ import React, { useState } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
-import GalleryView from '@/components/GalleryView';
+import PrefectureDetailModal from '@/components/PrefectureDetailModal';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 
-// Define the possible display modes for the map
-type MapDisplayMode = 'simple_color' | 'photo' | 'none';
-
 export default function Home() {
   const { user, memories, addMemory, refreshMemories } = useGlobalContext();
-  const [displayMode, setDisplayMode] = useState<MapDisplayMode>('photo');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
-  const [modalPrefectureId, setModalPrefectureId] = useState<string>('');
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
-  const openAddModal = (prefectureId: string) => {
-    setModalPrefectureId(prefectureId);
+  const openAddModal = () => {
+    setSelectedPrefecture(null);
     setIsModalOpen(true);
   };
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
-    if (!user) {
-      alert('Please sign in to record your visit!');
-      return;
-    }
-    const currentMemory = memories.find(m => m.prefectureId === prefecture.id);
-    if (currentMemory) {
-      setSelectedPrefecture(prefecture);
-    } else {
-      openAddModal(prefecture.id);
-    }
+    setSelectedPrefecture(prefecture);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedPrefecture(null);
+  };
+
+  const openAddModalFromDetail = () => {
+    setIsDetailModalOpen(false);
+    setIsModalOpen(true);
   };
 
   const handlePrefectureHover = (
@@ -56,7 +54,7 @@ export default function Home() {
           <div className="flex items-center space-x-4">
             {user && (
               <button
-                onClick={() => openAddModal('')}
+                onClick={openAddModal}
                 className="rounded-button bg-primary px-3 py-1 text-white"
               >
                 思い出を追加
@@ -67,40 +65,28 @@ export default function Home() {
         </nav>
       </header>
 
-      <div className="container mx-auto p-4">
-        {selectedPrefecture ? (
-          <GalleryView
-            prefecture={selectedPrefecture}
-            onBackToMap={() => setSelectedPrefecture(null)}
-            onAddPhoto={() => openAddModal(selectedPrefecture.id)}
-          />
-        ) : (
-          <>
-            {/* UI to change display mode */}
-            <div className="my-4 rounded-box bg-surface p-2 shadow-card">
-              <span className="mr-4 font-bold">Map Display Mode:</span>
-              <button onClick={() => setDisplayMode('none')}>None</button>
-              <button onClick={() => setDisplayMode('simple_color')} className="mx-2">
-                Color
-              </button>
-              <button onClick={() => setDisplayMode('photo')}>Photo</button>
-            </div>
-
-            <JapanMap
-              memories={memories}
-              displayMode={displayMode}
-              onPrefectureClick={handlePrefectureClick}
-              onPrefectureHover={handlePrefectureHover}
-              onMouseLeave={handleMouseLeave}
-            />
-          </>
-        )}
+      <div className="container mx-auto p-4 flex-grow flex flex-col items-center justify-center">
+        <JapanMap
+          memories={memories}
+          onPrefectureClick={handlePrefectureClick}
+          onPrefectureHover={handlePrefectureHover}
+          onMouseLeave={handleMouseLeave}
+        />
       </div>
+
+      {selectedPrefecture && (
+        <PrefectureDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={closeDetailModal}
+          prefecture={selectedPrefecture}
+          onAddPhoto={openAddModalFromDetail}
+        />
+      )}
 
       <AddMemoryModal
         isOpen={isModalOpen}
-        prefectureId={modalPrefectureId || undefined}
-        onClose={() => setIsModalOpen(false)}
+        prefectureId={selectedPrefecture?.id}
+        onClose={() => { setIsModalOpen(false); setSelectedPrefecture(null); }}
         onUpload={async (prefectureId, files) => {
           await addMemory(prefectureId, files);
           await refreshMemories();

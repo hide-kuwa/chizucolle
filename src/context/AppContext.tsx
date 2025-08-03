@@ -7,6 +7,8 @@ import { driveService } from '@/services/driveService';
 import { firestoreService } from '@/services/firestoreService';
 import { auth } from '@/lib/firebase';
 
+const LOCAL_STORAGE_KEY = 'chizucolle_memories';
+
 interface AppContextType {
   user: User | null;
   loading: boolean;
@@ -25,16 +27,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState<boolean>(true);
   const [memories, setMemories] = useState<Memory[]>([]);
 
+  const updateMemory = useCallback((memory: Memory) => {
+    setMemories(prev => {
+      const index = prev.findIndex(m => m.prefectureId === memory.prefectureId);
+      if (index > -1) {
+        const updated = [...prev];
+        updated[index] = memory;
+        return updated;
+      }
+      return [...prev, memory];
+    });
+  }, []);
+
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged(async authUser => {
       setUser(authUser);
       if (authUser) {
+        setLoading(true);
         const fetched = await firestoreService.getMemories(authUser.uid);
         setMemories(fetched);
+        setLoading(false);
       } else {
-        setMemories([]);
+        try {
+          const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (localData) {
+            setMemories(JSON.parse(localData));
+          } else {
+            setMemories([]);
+          }
+        } catch (error) {
+          console.error('Failed to parse memories from localStorage', error);
+          setMemories([]);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -88,18 +114,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateMemoryStatus = useCallback(
     async (prefectureId: string, status: VisitStatus) => {
-      if (!user) throw new Error('User must be logged in to update status.');
-      setLoading(true);
-      try {
-        await firestoreService.updateMemoryStatus(user.uid, prefectureId, status);
-        await refreshMemories();
-      } catch (error) {
-        console.error('Failed to update memory status:', error);
-      } finally {
-        setLoading(false);
+      if (user) {
+        setLoading(true);
+        try {
+          await firestoreService.updateMemoryStatus(user.uid, prefectureId, status);
+          updateMemory({ prefectureId, status, photos: memories.find(m => m.prefectureId === prefectureId)?.photos || [] });
+        } catch (error) {
+          console.error('Failed to update memory status:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        const currentMemories = [...memories];
+        const index = currentMemories.findIndex(m => m.prefectureId === prefectureId);
+        let newMemory: Memory;
+        if (index > -1) {
+          newMemory = { ...currentMemories[index], status };
+          currentMemories[index] = newMemory;
+        } else {
+          newMemory = { prefectureId, status, photos: [] };
+          currentMemories.push(newMemory);
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentMemories));
+        updateMemory(newMemory);
       }
     },
-    [user, refreshMemories],
+    [user, memories, updateMemory],
   );
 
   const value = {
