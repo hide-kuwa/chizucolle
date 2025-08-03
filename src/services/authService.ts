@@ -1,12 +1,14 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { User } from "../types";
+import { isMobileDevice } from "@/utils/isMobile";
 
 const formatUser = (user: FirebaseUser): User => ({
   uid: user.uid,
@@ -15,14 +17,17 @@ const formatUser = (user: FirebaseUser): User => ({
 });
 
 export const authService = {
-  signInWithGoogle: async (): Promise<User> => {
+  signInWithGoogle: async (): Promise<void> => {
     const provider = new GoogleAuthProvider();
     // ★★★【ここが、最後の鍵だ！】★★★
     // ログインの、まさにその瞬間に、ドライブへのアクセス許可も、同時に要求する！
     provider.addScope('https://www.googleapis.com/auth/drive.file');
 
-    const result = await signInWithPopup(auth, provider);
-    return formatUser(result.user);
+    if (isMobileDevice()) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
   },
 
   signOut: (): Promise<void> => {
