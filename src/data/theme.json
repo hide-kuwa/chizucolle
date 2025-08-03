@@ -2,6 +2,8 @@
   "colors": {
     "primary": "#3b82f6",
     "accent": "#f97316",
+    "visited": "#6ee7b7",
+    "visited-light": "#d1fae5",
     "background": "#f1f5f9",
     "text-primary": "#1e293b",
     "text-secondary": "#475569",
