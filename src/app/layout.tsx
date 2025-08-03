@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { AppProvider } from "@/context/AppContext";
 
 export const metadata: Metadata = {
   title: "地図コレ",
@@ -16,9 +17,12 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <AuthProvider>
-          {children}
+          <AppProvider>
+            {children}
+          </AppProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+

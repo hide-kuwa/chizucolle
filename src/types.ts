@@ -16,10 +16,14 @@ export interface Photo {
   name: string;
 }
 
+// Define the possible visit statuses
+export type VisitStatus = 'lived' | 'visited' | 'passed_through' | 'unvisited';
+
 export interface Memory {
   prefectureId: string;
+  status: VisitStatus; // Replaces the simple "visited" concept
   photos: Photo[];
-  primaryPhotoUrl?: string;
+  notes?: string; // Optional field for future use
 }
 
 export interface TooltipData {
