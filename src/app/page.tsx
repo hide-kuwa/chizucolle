@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
@@ -14,6 +14,12 @@ export default function Home() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   const openAddModal = () => {
     setSelectedPrefecture(null);
@@ -21,8 +27,22 @@ export default function Home() {
   };
 
   const handlePrefectureClick = (prefecture: Prefecture) => {
-    setSelectedPrefecture(prefecture);
-    setIsDetailModalOpen(true);
+    if (isTouchDevice) {
+      if (tappedPrefectureId === prefecture.id) {
+        setSelectedPrefecture(prefecture);
+        setIsDetailModalOpen(true);
+        setTappedPrefectureId(null);
+      } else {
+        setTappedPrefectureId(prefecture.id);
+      }
+    } else {
+      setSelectedPrefecture(prefecture);
+      setIsDetailModalOpen(true);
+    }
+  };
+
+  const handleMapBackgroundClick = () => {
+    setTappedPrefectureId(null);
   };
 
   const closeDetailModal = () => {
@@ -71,6 +91,8 @@ export default function Home() {
           onPrefectureClick={handlePrefectureClick}
           onPrefectureHover={handlePrefectureHover}
           onMouseLeave={handleMouseLeave}
+          tappedPrefectureId={tappedPrefectureId}
+          onMapBackgroundClick={handleMapBackgroundClick}
         />
       </div>
 
