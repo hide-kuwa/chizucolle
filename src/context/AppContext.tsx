@@ -61,16 +61,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const updatedMemories = [...prevMemories];
           const existingMemory = updatedMemories[existingMemoryIndex];
           existingMemory.photos.push(...newPhotos);
-          // Set new primary photo if it's the first one for that memory
-          if (!existingMemory.primaryPhotoUrl) {
-              existingMemory.primaryPhotoUrl = newPhotos[0]?.url;
-          }
           return updatedMemories;
         } else {
           return [...prevMemories, {
             prefectureId,
             photos: newPhotos,
-            primaryPhotoUrl: newPhotos[0]?.url,
+            status: 'visited',
           }];
         }
       });

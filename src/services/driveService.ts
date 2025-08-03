@@ -26,10 +26,10 @@ export const driveService = {
     console.log("Fetching initial memories...");
     return new Promise(resolve => {
       setTimeout(() => {
-        const memories = Object.entries(MOCK_DB).map(([prefectureId, photos]) => ({
+        const memories: Memory[] = Object.entries(MOCK_DB).map(([prefectureId, photos]) => ({
             prefectureId,
+            status: 'visited',
             photos,
-            primaryPhotoUrl: photos[0]?.url,
         }));
         resolve(memories);
       }, 500);
