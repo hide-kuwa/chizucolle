@@ -39,7 +39,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
   };
 
   return (
-    <div className="w-full max-w-4xl rounded-box border bg-surface p-4 shadow-card">
+    <div className="w-full max-w-4xl mx-auto rounded-box border bg-surface p-4 shadow-card">
       <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
         <defs>
           {memories.map(memory => (
