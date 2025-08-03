@@ -9,7 +9,10 @@ interface JapanMapProps {
   memories: Memory[];
   displayMode: MapDisplayMode;
   onPrefectureClick: (prefecture: Prefecture) => void;
-  onPrefectureHover: (name: string, event: React.MouseEvent) => void;
+  onPrefectureHover: (
+    name: string,
+    event: React.MouseEvent<SVGPathElement>,
+  ) => void;
   onMouseLeave: () => void;
 }
 
