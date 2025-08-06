@@ -5,8 +5,9 @@ import type { User, Memory, VisitStatus } from '@/types';
 import { authService } from '@/services/authService';
 import { driveService } from '@/services/driveService';
 import { firestoreService } from '@/services/firestoreService';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const LOCAL_STORAGE_KEY = 'chizucolle_memories';
 
@@ -19,6 +20,9 @@ interface AppContextType {
   addMemory: (prefectureId: string, photos: File[]) => Promise<void>;
   refreshMemories: () => Promise<void>;
   updateMemoryStatus: (prefectureId: string, status: VisitStatus) => Promise<void>;
+  conflict: { local: Memory[]; remote: Memory[] } | null;
+  onSelectLocal: () => Promise<void>;
+  onSelectRemote: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -28,6 +32,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState<boolean>(true);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{ local: Memory[]; remote: Memory[] } | null>(null);
+
+  const memoriesEqual = (a: Memory[], b: Memory[]) => {
+    if (a.length !== b.length) return false;
+    const sortById = (arr: Memory[]) => [...arr].sort((x, y) => x.prefectureId.localeCompare(y.prefectureId));
+    const sortedA = sortById(a);
+    const sortedB = sortById(b);
+    return sortedA.every((mem, idx) => {
+      const other = sortedB[idx];
+      return (
+        mem.prefectureId === other.prefectureId &&
+        mem.status === other.status &&
+        JSON.stringify(mem.photos) === JSON.stringify(other.photos)
+      );
+    });
+  };
 
   const updateMemory = useCallback((memory: Memory) => {
     setMemories(prev => {
@@ -66,10 +86,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (token) {
           setDriveAccessToken(token);
         }
-        const fetched = await firestoreService.getMemories(authUser.uid);
-        setMemories(fetched);
+
+        let localMemories: Memory[] = [];
+        try {
+          const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (localData) {
+            localMemories = JSON.parse(localData);
+          }
+        } catch (error) {
+          console.error('Failed to parse memories from localStorage', error);
+        }
+
+        const firestoreMemories = await firestoreService.getMemories(authUser.uid);
+
+        if (localMemories.length && firestoreMemories.length === 0) {
+          await Promise.all(
+            localMemories.map(memory =>
+              setDoc(doc(db, 'users', authUser.uid, 'memories', memory.prefectureId), memory),
+            ),
+          );
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+          setMemories(localMemories);
+        } else if (
+          localMemories.length &&
+          firestoreMemories.length &&
+          !memoriesEqual(localMemories, firestoreMemories)
+        ) {
+          setMemories(localMemories);
+          setConflict({ local: localMemories, remote: firestoreMemories });
+        } else {
+          const finalMemories = firestoreMemories.length ? firestoreMemories : localMemories;
+          setMemories(finalMemories);
+          if (firestoreMemories.length) {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+          }
+        }
         setLoading(false);
       } else {
+        setConflict(null);
         try {
           const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (localData) {
@@ -170,6 +224,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [user, memories, updateMemory],
   );
 
+  const onSelectLocal = useCallback(async () => {
+    if (!user || !conflict) return;
+    setLoading(true);
+    try {
+      await Promise.all(
+        conflict.remote.map(remote =>
+          deleteDoc(doc(db, 'users', user.uid, 'memories', remote.prefectureId)),
+        ),
+      );
+      await Promise.all(
+        conflict.local.map(memory =>
+          setDoc(doc(db, 'users', user.uid, 'memories', memory.prefectureId), memory),
+        ),
+      );
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      setMemories(conflict.local);
+      setConflict(null);
+    } catch (error) {
+      console.error('Failed to save local memories to Firestore', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, conflict]);
+
+  const onSelectRemote = useCallback(async () => {
+    if (!conflict) return;
+    setLoading(true);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      setMemories(conflict.remote);
+      setConflict(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [conflict]);
+
   const value = {
     user,
     loading,
@@ -179,6 +269,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addMemory,
     refreshMemories,
     updateMemoryStatus,
+    conflict,
+    onSelectLocal,
+    onSelectRemote,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
