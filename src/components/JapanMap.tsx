@@ -31,43 +31,38 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
     const memory = memories.find(m => m.prefectureId === prefectureId);
     const status = memory?.status || 'unvisited';
 
-    if (memory?.photos && memory.photos.length > 0) {
-      return `url(#pattern-${prefectureId})`;
-    }
-
     return statusColors[status];
   };
 
   return (
     <div className="w-full max-w-4xl sm:mx-auto rounded-box border bg-surface p-2 sm:p-4 shadow-card">
       <svg viewBox="0 0 688 684" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
-        <defs>
-          {memories.map(memory => (
-            (memory.photos && memory.photos.length > 0) && (
-              <pattern key={`pattern-${memory.prefectureId}`} id={`pattern-${memory.prefectureId}`} patternUnits="userSpaceOnUse" width="100" height="100">
-                <image href={memory.photos[0].url} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )
-          ))}
-        </defs>
         <g onClick={(e) => e.stopPropagation()}>
-          {prefectures.map(p => (
-            // Prefecture shape with hover animation and border
-            <path
-              key={p.id}
-              d={p.d}
-              fill={getFill(p.id)}
-              onClick={(e) => onPrefectureClick(p, e)}
-              onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-              className={`
-                stroke-white stroke-[0.5px]
-                cursor-pointer
-                transition-all duration-200 ease-in-out
-                hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
-                ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
-              `}
-            />
-          ))}
+          {prefectures.map(p => {
+            const memory = memories.find(m => m.prefectureId === p.id);
+            const hasPhotos = memory?.photos && memory.photos.length > 0;
+
+            return (
+              // Prefecture shape with hover animation and border
+              <path
+                key={p.id}
+                d={p.d}
+                fill={getFill(p.id)}
+                onClick={(e) => onPrefectureClick(p, e)}
+                onMouseEnter={(e) => onPrefectureHover(p.name, e)}
+                className={`
+                  cursor-pointer
+                  transition-all duration-200 ease-in-out
+                  hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
+                  ${p.id === tappedPrefectureId
+                    ? 'animate-float stroke-accent stroke-[2px]'
+                    : hasPhotos
+                      ? 'stroke-accent stroke-[1.5px]'
+                      : 'stroke-white stroke-[0.5px]'}
+                `}
+              />
+            );
+          })}
         </g>
       </svg>
     </div>
