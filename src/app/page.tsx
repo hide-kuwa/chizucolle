@@ -134,6 +134,7 @@ export default function Home() {
 
       {/* 県が選択されて、ポップアップの位置が決まったら、詳細モーダルを開く！ */}
       {selectedPrefecture && isDetailModalOpen && popupPosition && (
+        // Display the prefecture details in a dedicated modal
         <PrefectureDetailModal
           isOpen={isDetailModalOpen}
           onClose={closeDetailModal}
