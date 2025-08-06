@@ -6,7 +6,7 @@ import { authService } from '@/services/authService';
 import { driveService } from '@/services/driveService';
 import { firestoreService } from '@/services/firestoreService';
 import { auth } from '@/lib/firebase';
-import { getRedirectResult } from 'firebase/auth';
+import { getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 
 const LOCAL_STORAGE_KEY = 'chizucolle_memories';
 
@@ -27,6 +27,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
 
   const updateMemory = useCallback((memory: Memory) => {
     setMemories(prev => {
@@ -44,6 +45,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getRedirectResult(auth)
       .then(result => {
         if (result) {
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential?.accessToken) {
+            setDriveAccessToken(credential.accessToken);
+          }
           console.log('Successfully signed in with redirect', result.user);
         }
       })
@@ -81,10 +86,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signIn = async () => {
     setLoading(true);
     try {
-      await authService.signInWithGoogle();
+      const token = await authService.signInWithGoogle();
+      if (token) setDriveAccessToken(token);
       // onAuthStateChanged will update state
     } catch (error) {
-      console.error("Sign in failed", error);
+      console.error('Sign in failed', error);
       setLoading(false);
     }
   };
@@ -100,9 +106,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!user) throw new Error('User must be logged in to add memories.');
       setLoading(true);
       try {
-        const accessToken = await auth.currentUser?.getIdToken();
-        if (!accessToken) throw new Error('Missing access token');
-        const uploaded = await driveService.uploadPhotos(accessToken, prefectureId, photos);
+        const token = driveAccessToken;
+        if (!token) throw new Error('Missing access token');
+        const uploaded = await driveService.uploadPhotos(token, prefectureId, photos);
         await firestoreService.addPhotosToMemory(user.uid, prefectureId, uploaded);
         setMemories(prev => {
           const index = prev.findIndex(m => m.prefectureId === prefectureId);
@@ -121,7 +127,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLoading(false);
       }
     },
-    [user],
+    [user, driveAccessToken],
   );
 
   const refreshMemories = useCallback(async () => {

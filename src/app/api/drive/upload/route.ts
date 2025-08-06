@@ -8,7 +8,12 @@ const APP_FOLDER_NAME = 'Chizu-Colle Memories';
  */
 async function getOrCreateAppFolder(accessToken: string): Promise<string> {
   // First, search for the folder
-  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder'&spaces=drive&fields=files(id, name)`, {
+  const params = new URLSearchParams({
+    q: `name='${APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder'`,
+    spaces: 'drive',
+    fields: 'files(id, name)',
+  });
+  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
