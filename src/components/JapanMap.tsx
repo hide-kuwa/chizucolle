@@ -56,12 +56,11 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
               key={p.id}
               d={p.d}
               fill={getFill(p.id)}
-              stroke="#fff"
-              strokeWidth={0.5}
               onClick={(e) => onPrefectureClick(p, e)}
               onMouseEnter={(e) => onPrefectureHover(p.name, e)}
               className={`
                 cursor-pointer
+                stroke-white stroke-[0.5px]
                 transition-all duration-200 ease-in-out
                 hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
                 ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
