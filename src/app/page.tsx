@@ -130,6 +130,9 @@ export default function Home() {
         />
       </div>
 
+      {/* ↓↓↓ ここの部分が、一番大事な心臓部だ！ ↓↓↓ */}
+
+      {/* 県が選択されて、ポップアップの位置が決まったら、詳細モーダルを開く！ */}
       {selectedPrefecture && isDetailModalOpen && popupPosition && (
         <PrefectureDetailModal
           isOpen={isDetailModalOpen}
@@ -140,6 +143,7 @@ export default function Home() {
         />
       )}
 
+      {/* 写真追加モーダル */}
       <AddMemoryModal
         isOpen={isModalOpen}
         prefectureId={selectedPrefecture?.id}
@@ -149,6 +153,8 @@ export default function Home() {
           await refreshMemories();
         }}
       />
+
+      {/* ログインモーダル */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
@@ -157,6 +163,7 @@ export default function Home() {
           setIsLoginModalOpen(false);
         }}
       />
+
       {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
     </main>
   );
