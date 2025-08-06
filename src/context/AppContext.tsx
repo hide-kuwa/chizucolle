@@ -62,6 +62,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(authUser);
       if (authUser) {
         setLoading(true);
+        const token = await authService.getAccessToken();
+        if (token) {
+          setDriveAccessToken(token);
+        }
         const fetched = await firestoreService.getMemories(authUser.uid);
         setMemories(fetched);
         setLoading(false);
