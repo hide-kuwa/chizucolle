@@ -33,6 +33,25 @@ export const authService = {
     }
   },
 
+  getAccessToken: async (): Promise<string | undefined> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return undefined;
+
+    try {
+      await currentUser.getIdTokenResult(true);
+      const provider = new GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/drive.file');
+
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      console.log('Access Token Refreshed!');
+      return credential?.accessToken;
+    } catch (error) {
+      console.error('Failed to refresh access token', error);
+      return undefined;
+    }
+  },
+
   signOut: (): Promise<void> => {
     return firebaseSignOut(auth);
   },
