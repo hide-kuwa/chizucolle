@@ -19,18 +19,19 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
 
   const getModalStyle = () => {
     const modalWidth = 320; // w-80
-    const modalHeight = 250; // approx height
-    const offset = 32; // distance from cursor
+    const modalHeight = 250; // modal approximate height
+    const offset = 24; // distance from cursor
 
     const isRightSide = position.x > window.innerWidth / 2;
 
     let top = position.y - modalHeight / 2;
-    let left = isRightSide ? position.x - modalWidth - offset : position.x + offset;
+    const left = isRightSide
+      ? position.x - modalWidth - offset
+      : position.x + offset;
 
     if (top < 16) top = 16;
-    if (top + modalHeight > window.innerHeight - 16) top = window.innerHeight - modalHeight - 16;
-    if (left < 16) left = 16;
-    if (left + modalWidth > window.innerWidth - 16) left = window.innerWidth - modalWidth - 16;
+    if (top + modalHeight > window.innerHeight - 16)
+      top = window.innerHeight - modalHeight - 16;
 
     return { top: `${top}px`, left: `${left}px` };
   };
