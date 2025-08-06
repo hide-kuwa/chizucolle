@@ -36,13 +36,13 @@ export default function Home() {
   ) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const position = {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
+      x: rect.left + window.scrollX,
+      y: rect.top + window.scrollY + rect.height / 2,
     };
+    setPopupPosition(position);
 
     if (isTouchDevice) {
       if (tappedPrefectureId === prefecture.id) {
-        setPopupPosition(position);
         setSelectedPrefecture(prefecture);
         setIsDetailModalOpen(true);
         setTappedPrefectureId(null);
@@ -51,7 +51,6 @@ export default function Home() {
         setIsDetailModalOpen(false);
       }
     } else {
-      setPopupPosition(position);
       setSelectedPrefecture(prefecture);
       setIsDetailModalOpen(true);
     }
