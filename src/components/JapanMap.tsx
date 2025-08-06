@@ -52,6 +52,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
         </defs>
         <g onClick={(e) => e.stopPropagation()}>
           {prefectures.map(p => (
+            // Prefecture shape with hover animation and border
             <path
               key={p.id}
               d={p.d}
