@@ -51,10 +51,67 @@ async function getOrCreateAppFolder(accessToken: string): Promise<string> {
   return createData.id;
 }
 
+/**
+ * Finds or creates a subfolder with the given name inside the parent folder.
+ */
+async function getOrCreatePrefectureFolder(
+  accessToken: string,
+  parentId: string,
+  prefectureName: string,
+): Promise<string> {
+  const params = new URLSearchParams({
+    q: `'${parentId}' in parents and name='${prefectureName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    spaces: 'drive',
+    fields: 'files(id, name)',
+  });
+
+  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!searchRes.ok) {
+    const errorBody = await searchRes.json();
+    console.error('Google Drive API Error (Prefecture Folder Search):', JSON.stringify(errorBody, null, 2));
+    throw new Error('Could not search for prefecture folder in Google Drive.');
+  }
+
+  const searchData = await searchRes.json();
+  if (searchData.files.length > 0) {
+    return searchData.files[0].id;
+  }
+
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: prefectureName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId],
+    }),
+  });
+
+  if (!createRes.ok) {
+    const errorBody = await createRes.json();
+    console.error('Google Drive API Error (Prefecture Folder Creation):', JSON.stringify(errorBody, null, 2));
+    throw new Error('Could not create prefecture folder in Google Drive.');
+  }
+
+  const createData = await createRes.json();
+  return createData.id;
+}
+
+function formatTimestamp(date: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const prefectureId = formData.get('prefectureId') as string;
+    const prefectureName = formData.get('prefectureId') as string;
     const files = formData.getAll('files') as File[];
     const authHeader = req.headers.get('authorization');
 
@@ -66,15 +123,18 @@ export async function POST(req: NextRequest) {
     // ★★★【ここが、最後の鍵だ！】★★★
     // アップロードする前に、まず「宝箱」の場所を確保する！
     const appFolderId = await getOrCreateAppFolder(accessToken);
+    const prefectureFolderId = await getOrCreatePrefectureFolder(accessToken, appFolderId, prefectureName);
 
     const uploaded: Photo[] = [];
     for (const file of files) {
+      const timestamp = formatTimestamp(new Date());
+      const newName = `${timestamp}_${file.name}`;
+
       const metadata = {
-        name: file.name,
-        // 親フォルダとして、必ず僕たちの「宝箱」を指定する！
-        parents: [appFolderId],
+        name: newName,
+        parents: [prefectureFolderId],
         mimeType: file.type,
-        description: `prefecture:${prefectureId}`,
+        description: `prefecture:${prefectureName}`,
       };
 
       const body = new FormData();
