@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スーパーマリオ風ポートフォリオ V2</title>
+    <style>
+        /* --- ✨ デザイン設定エリア (ここを編集して見た目をカスタマイズ！) --- */
+        :root {
+            /* サイズ設定 */
+            --player-size: 32px;
+            --node-size: 40px;
+            --path-width: 8px;
+
+            /* ゲーム物理設定 */
+            --gravity: 0.8;
+            --jump-power: -15;
+            --move-speed: 5;
+
+            /* カラーパレット */
+            --c-text-light: #ffffff;
+            --c-text-dark: #333333;
+            --c-text-shadow: #000000;
+            
+            /* マップ画面の色 */
+            --c-map-sky: #87CEEB;
+            --c-map-ground: #90EE90;
+            --c-map-player: #E63946;
+            --c-map-player-border: #A8202B;
+            --c-map-node: #FFD700;
+            --c-map-node-border: #DAA520;
+            --c-map-path: rgba(255, 255, 255, 0.8);
+            /* ✨ 会計の城の特別色 */
+            --c-map-node-special: #F5F5F5;
+            --c-map-node-special-border: #A9A9A9;
+
+
+            /* ステージ画面の色 */
+            --c-stage-sky: #5C94FC;
+            --c-stage-ground: #D2691E;
+            --c-stage-ground-border: #8B4513;
+            --c-stage-player-body: #0077B6;
+            --c-stage-player-head: #F1C40F;
+            --c-stage-exit: #228B22;
+            --c-stage-exit-border: #006400;
+
+            /* ?ブロックの色 */
+            --c-block: #FDB833;
+            --c-block-border: #E3741F;
+            --c-block-hit: #A0522D;
+            --c-block-hit-border: #5D2E0A;
+
+            /* Geminiモーダルの色 */
+            --c-modal-bg: #2c3e50;
+            --c-modal-border: #ecf0f1;
+            --c-loader-primary: #3498db;
+            --c-loader-secondary: #f3f3f3;
+        }
+        /* --- 基本設定 --- */
+        body {
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            image-rendering: pixelated;
+        }
+
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .stage-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--c-text-light);
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 3px 3px 0 var(--c-text-shadow);
+            z-index: 10;
+            text-align: center;
+            width: 90%;
+        }
+
+        /* --- 1. オープニング画面 --- */
+        #openingScreen {
+            background: #000;
+            color: var(--c-text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 24px;
+            line-height: 1.6;
+            z-index: 300;
+        }
+
+        /* --- 2. マップ選択画面 --- */
+        #mapScreen {
+            background: linear-gradient(to bottom, var(--c-map-sky) 0%, var(--c-map-ground) 70%);
+            z-index: 200;
+        }
+
+        #mapContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #mapPathsSvg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+
+        .map-path {
+            stroke: var(--c-map-path);
+            stroke-width: var(--path-width);
+            stroke-linecap: round;
+            fill: transparent;
+        }
+
+        .map-node {
+            position: absolute;
+            width: var(--node-size);
+            height: var(--node-size);
+            background: var(--c-map-node);
+            border: 4px solid var(--c-map-node-border);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: var(--c-stage-ground-border);
+            z-index: 10;
+        }
+        
+        /* ✨ 会計の城の特別スタイル */
+        .map-node.special-node {
+            background: var(--c-map-node-special);
+            border-color: var(--c-map-node-special-border);
+            color: var(--c-text-dark);
+        }
+
+        #mapPlayer {
+            position: absolute;
+            width: var(--player-size);
+            height: var(--player-size);
+            background: var(--c-map-player);
+            border-radius: 50%;
+            border: 3px solid var(--c-map-player-border);
+            z-index: 15;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* --- 3. ステージ画面 --- */
+        #stageScreen {
+            background: var(--c-stage-sky);
+            z-index: 100;
+        }
+
+        #stageContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .stage-floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10%;
+            background: var(--c-stage-ground);
+            border-top: 5px solid var(--c-stage-ground-border);
+        }
+
+        .stage-exit {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: var(--c-stage-exit);
+            border: 5px solid var(--c-stage-exit-border);
+            border-radius: 10px 10px 0 0;
+            bottom: 10%;
+            right: 5%;
+        }
+        .stage-exit::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 90px;
+            height: 20px;
+            background: var(--c-stage-exit);
+            border: 5px solid var(--c-stage-exit-border);
+            border-radius: 8px;
+        }
+
+        #stagePlayer {
+            position: absolute;
+            width: var(--player-size);
+            height: calc(var(--player-size) * 1.5);
+            background: var(--c-stage-player-body);
+            border-radius: 8px;
+        }
+        #stagePlayer::before {
+            content: '';
+            position: absolute;
+            width: var(--player-size);
+            height: var(--player-size);
+            background: var(--c-stage-player-head);
+            top: -10px;
+            left: 0;
+            border-radius: 50%;
+        }
+        
+        /* --- Gemini API関連のスタイル --- */
+        .idea-block {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--c-block);
+            border: 4px solid var(--c-block-border);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--c-text-light);
+            text-shadow: 2px 2px 0 var(--c-block-border);
+            animation: bob 2s ease-in-out infinite;
+        }
+        .idea-block.hit {
+            background: var(--c-block-hit);
+            border-color: var(--c-block-hit-border);
+            animation: none;
+        }
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        #geminiResponseBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background: var(--c-modal-bg);
+            color: var(--c-text-light);
+            border: 5px solid var(--c-modal-border);
+            border-radius: 15px;
+            padding: 25px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+        }
+        #geminiResponseContent {
+            font-size: 18px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #geminiCloseButton {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .loader {
+            border: 4px solid var(--c-loader-secondary);
+            border-top: 4px solid var(--c-loader-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* ✨ NPC（賢者）のスタイル */
+        .npc {
+            position: absolute;
+            width: var(--player-size);
+            height: calc(var(--player-size) * 1.5);
+            background: #4CAF50; /* 緑色 */
+            border-radius: 8px;
+        }
+        .npc::before { /* 頭 */
+            content: '';
+            position: absolute;
+            width: var(--player-size);
+            height: var(--player-size);
+            background: #8BC34A;
+            top: -10px;
+            left: 0;
+            border-radius: 50%;
+        }
+        .npc-prompt {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: red;
+            font-weight: bold;
+            display: none;
+            animation: bob 1s ease-in-out infinite;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="openingScreen" class="screen">
+        <div class="opening-text">
+            ↑↓←→ : いどう<br>
+            ENTER : けってい
+        </div>
+    </div>
+
+    <div id="mapScreen" class="screen hidden">
+        <div id="mapContainer">
+            <div id="mapStageTitle" class="stage-title"></div>
+            <!-- SVGパスはJSでここに生成 -->
+        </div>
+    </div>
+
+    <div id="stageScreen" class="screen hidden">
+        <div id="stageContainer">
+            <div id="stageTitle" class="stage-title"></div>
+            <div class="stage-floor"></div>
+            <div id="stagePlayer"></div>
+            <div class="stage-exit"></div>
+        </div>
+    </div>
+    
+    <div id="geminiResponseBox">
+        <span id="geminiCloseButton">&times;</span>
+        <div id="geminiResponseContent"></div>
+    </div>
+
+    <script>
+    const openingScreen = document.getElementById('openingScreen');
+    const mapScreen = document.getElementById('mapScreen');
+    const stageScreen = document.getElementById('stageScreen');
+    const mapContainer = document.getElementById('mapContainer');
+    const mapStageTitle = document.getElementById('mapStageTitle');
+    const stageContainer = document.getElementById('stageContainer');
+    const stagePlayer = document.getElementById('stagePlayer');
+    const stageExit = document.querySelector('.stage-exit');
+    const stageFloor = document.querySelector('.stage-floor');
+    const stageTitle = document.getElementById('stageTitle');
+    const geminiResponseBox = document.getElementById('geminiResponseBox');
+    const geminiResponseContent = document.getElementById('geminiResponseContent');
+    const geminiCloseButton = document.getElementById('geminiCloseButton');
+
+    const gameState = {
+        currentView: 'opening',
+        keys: {},
+        isModalOpen: false,
+    };
+
+    const mapState = {
+        player: null,
+        nodes: [
+            { id: 'links',      name: 'つながりの土管 (S)', x: 50, y: 80, connections: { right: 1, left: 5 }, hasNpc: true }, // 0
+            { id: 'travel',     name: 'トラベルアイランド', x: 70, y: 80, connections: { left: 0, up: 2 } }, // 1
+            { id: 'movie',      name: 'ムービーマウンテン',    x: 70, y: 40, connections: { down: 1, left: 3 }, hasNpc: true }, // 2
+            { id: 'pdf',        name: 'PDFファクトリー',    x: 50, y: 40, connections: { right: 2, down: 4 } }, // 3
+            { id: 'accounting', name: '会計の城',         x: 30, y: 40, connections: { up: 3, down: 5 }, hasNpc: true }, // 4
+            { id: 'fitness',    name: 'マッスルジム',       x: 30, y: 80, connections: { up: 4, right: 0 } }, // 5
+        ],
+        currentNodeIndex: 0,
+    };
+
+    const stageState = {
+        player: { x: 100, y: 100, vx: 0, vy: 0, onGround: false },
+        active: false,
+        blocks: [],
+        npc: null, // ✨ NPCオブジェクトを管理
+        canTalkToNpc: false, // ✨ NPCと話せるか
+    };
+
+    const geminiPrompts = {
+        accounting: '会計や税務に関する、面白くて少しマニアックな豆知識を1つ、簡潔に教えて。',
+        fitness: '斬新でクリエイティブな、1分でできる簡単なエクササイズを1つ提案して。',
+        travel: '世界中のあまり知られていない、でも絶対に行くべき美しい場所を1つ、魅力的なキャッチコピーと共に教えて。',
+        pdf: 'PDFの意外な活用法や、便利な裏技を1つ、プロっぽく教えて。',
+        movie: 'もしも「桃太郎」がサイバーパンク映画になったら、どんなストーリーになる？短いあらすじを考えて。',
+        links: '人と人との「つながり」をテーマにした、心温まる短い詩を1つ作って。',
+        default: '何か面白いアイデアを1つ教えて。'
+    };
+
+    // ✨ NPC用のGeminiプロンプト
+    const npcPrompts = {
+        accounting: "あなたはゲームの世界の賢者です。「会計の城」にいるプレイヤーに、専門家として少し思わせぶりなアドバイスを短い一言でお願いします。",
+        movie: "あなたはゲームの世界の賢者です。「ムービーマウンテン」にいるプレイヤーに、映画監督のようにクリエイティブなインスピレーションを与える短い一言をお願いします。",
+        links: "あなたはゲームの世界の賢者です。スタート地点にいるプレイヤーに、これからの冒険を応援するような、希望に満ちた短い一言をお願いします。",
+    };
+
+    function createMap() {
+        mapContainer.innerHTML = '<div id="mapStageTitle" class="stage-title"></div>';
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute('id', 'mapPathsSvg');
+        mapContainer.appendChild(svg);
+
+        mapState.nodes.forEach((node) => {
+            const nodeEl = document.createElement('div');
+            nodeEl.className = 'map-node';
+            if (node.id === 'accounting') {
+                nodeEl.classList.add('special-node');
+            }
+            nodeEl.style.left = `${node.x}%`;
+            nodeEl.style.top = `${node.y}%`;
+            nodeEl.textContent = mapState.nodes.indexOf(node) + 1;
+            if (node.id === 'links') nodeEl.textContent = 'S';
+            mapContainer.appendChild(nodeEl);
+        });
+
+        mapState.nodes.forEach((node, index) => {
+            for (const dir in node.connections) {
+                const targetIndex = node.connections[dir];
+                if (index < targetIndex) {
+                    createCurvePath(node, mapState.nodes[targetIndex], svg);
+                }
+            }
+        });
+
+        mapState.player = document.createElement('div');
+        mapState.player.id = 'mapPlayer';
+        mapContainer.appendChild(mapState.player);
+        updateMapPlayerPosition();
+    }
+
+    function createCurvePath(node1, node2, svg) {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const path = document.createElementNS(svgNS, "path");
+        path.setAttribute('class', 'map-path');
+        const containerWidth = mapContainer.offsetWidth;
+        const containerHeight = mapContainer.offsetHeight;
+        const nodeSize = mapContainer.querySelector('.map-node').offsetWidth;
+        const p1x = (node1.x / 100) * containerWidth + (nodeSize / 2);
+        const p1y = (node1.y / 100) * containerHeight + (nodeSize / 2);
+        const p2x = (node2.x / 100) * containerWidth + (nodeSize / 2);
+        const p2y = (node2.y / 100) * containerHeight + (nodeSize / 2);
+        const midX = (p1x + p2x) / 2;
+        const midY = (p1y + p2y) / 2;
+        const dx = p2x - p1x;
+        const dy = p2y - p1y;
+        const curveFactor = 0.2;
+        const controlX = midX - dy * curveFactor;
+        const controlY = midY + dx * curveFactor;
+        const d = `M ${p1x} ${p1y} Q ${controlX} ${controlY} ${p2x} ${p2y}`;
+        path.setAttribute('d', d);
+        svg.appendChild(path);
+    }
+
+    function updateMapPlayerPosition() {
+        const targetNode = mapState.nodes[mapState.currentNodeIndex];
+        mapState.player.style.left = `calc(${targetNode.x}% - var(--player-size) / 2 + var(--node-size) / 2)`;
+        mapState.player.style.top = `calc(${targetNode.y}% - var(--player-size) / 2 + var(--node-size) / 2)`;
+        const titleEl = document.getElementById('mapStageTitle');
+        if(titleEl) {
+            titleEl.textContent = targetNode.name;
+        }
+    }
+
+    function updateStage() {
+        if (!stageState.active || gameState.isModalOpen) return;
+        stageState.player.vx = 0;
+        if (gameState.keys['ArrowLeft']) stageState.player.vx = -1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--move-speed'));
+        if (gameState.keys['ArrowRight']) stageState.player.vx = 1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--move-speed'));
+        if (gameState.keys['ArrowUp'] && stageState.player.onGround) {
+            stageState.player.vy = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-power'));
+            stageState.player.onGround = false;
+        }
+        stageState.player.vy += parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gravity'));
+        stageState.player.x += stageState.player.vx;
+        stageState.player.y += stageState.player.vy;
+        const floorTop = stageFloor.offsetTop;
+        if (stageState.player.y + stagePlayer.offsetHeight > floorTop) {
+            stageState.player.y = floorTop - stagePlayer.offsetHeight;
+            stageState.player.vy = 0;
+            stageState.player.onGround = true;
+        }
+        if (stageState.player.x < 0) stageState.player.x = 0;
+        if (stageState.player.x + stagePlayer.offsetWidth > window.innerWidth) {
+            stageState.player.x = window.innerWidth - stagePlayer.offsetWidth;
+        }
+        stageState.blocks.forEach(block => {
+            if (!block.hit && stageState.player.vy < 0) {
+                const playerRect = stagePlayer.getBoundingClientRect();
+                const blockRect = block.element.getBoundingClientRect();
+                if (playerRect.left < blockRect.right && playerRect.right > blockRect.left &&
+                    playerRect.top < blockRect.bottom && playerRect.top > blockRect.top) {
+                    stageState.player.vy = 0;
+                    block.hit = true;
+                    block.element.classList.add('hit');
+                    triggerGemini(block.stageId, geminiPrompts);
+                }
+            }
+        });
+        
+        // ✨ NPCとのインタラクション
+        if (stageState.npc) {
+            const playerRect = stagePlayer.getBoundingClientRect();
+            const npcRect = stageState.npc.element.getBoundingClientRect();
+            const promptEl = stageState.npc.promptElement;
+            
+            if (playerRect.right > npcRect.left - 50 && playerRect.left < npcRect.right + 50) {
+                stageState.canTalkToNpc = true;
+                promptEl.style.display = 'block';
+            } else {
+                stageState.canTalkToNpc = false;
+                promptEl.style.display = 'none';
+            }
+        }
+
+        const playerRect = stagePlayer.getBoundingClientRect();
+        const exitRect = stageExit.getBoundingClientRect();
+        if (playerRect.right > exitRect.left && playerRect.left < exitRect.right &&
+            playerRect.bottom > exitRect.top && playerRect.top < exitRect.bottom) {
+            exitStage();
+        }
+        stagePlayer.style.left = `${stageState.player.x}px`;
+        stagePlayer.style.top = `${stageState.player.y}px`;
+    }
+
+    async function triggerGemini(stageId, promptDb) {
+        gameState.isModalOpen = true;
+        geminiResponseContent.innerHTML = '<div class="loader"></div>';
+        geminiResponseBox.style.display = 'block';
+        const prompt = promptDb[stageId] || promptDb.default;
+        try {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            const result = await response.json();
+            const text = result.candidates[0].content.parts[0].text;
+            geminiResponseContent.innerText = text.trim();
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            geminiResponseContent.innerText = 'エラーが発生しました。少し時間をおいて再度お試しください。';
+        }
+    }
+
+    function closeGeminiBox() {
+        geminiResponseBox.style.display = 'none';
+        gameState.isModalOpen = false;
+    }
+
+    function switchView(viewName) {
+        gameState.currentView = viewName;
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`${viewName}Screen`).classList.remove('hidden');
+    }
+
+    function enterStage() {
+        stageState.active = true;
+        const currentStage = mapState.nodes[mapState.currentNodeIndex];
+        stageTitle.textContent = currentStage.name;
+        
+        // Clean up previous stage elements
+        document.querySelectorAll('.idea-block, .npc').forEach(el => el.remove());
+        stageState.blocks = [];
+        stageState.npc = null;
+
+        // Add ? Block
+        const block = document.createElement('div');
+        block.className = 'idea-block';
+        block.textContent = '✨';
+        block.style.left = '30%';
+        block.style.top = '60%';
+        stageContainer.appendChild(block);
+        stageState.blocks.push({ element: block, hit: false, stageId: currentStage.id });
+
+        // ✨ Add NPC if specified
+        if (currentStage.hasNpc) {
+            const npcEl = document.createElement('div');
+            npcEl.className = 'npc';
+            const promptEl = document.createElement('div');
+            promptEl.className = 'npc-prompt';
+            promptEl.textContent = '!';
+            npcEl.appendChild(promptEl);
+            
+            npcEl.style.left = '70%';
+            npcEl.style.bottom = '10%';
+            stageContainer.appendChild(npcEl);
+            stageState.npc = { element: npcEl, promptElement: promptEl, stageId: currentStage.id };
+        }
+
+        stageState.player.x = 100;
+        stageState.player.y = stageFloor.offsetTop - stagePlayer.offsetHeight;
+        stageState.player.vx = 0;
+        stageState.player.vy = 0;
+        stageState.player.onGround = true;
+        switchView('stage');
+    }
+
+    function exitStage() {
+        stageState.active = false;
+        stageTitle.textContent = '';
+        switchView('map');
+        updateMapPlayerPosition();
+    }
+
+    function gameLoop() {
+        if (gameState.currentView === 'stage') {
+            updateStage();
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function handleKeyDown(e) {
+        if (gameState.isModalOpen) {
+            if (e.key === 'Escape') closeGeminiBox();
+            return;
+        }
+        gameState.keys[e.key] = true;
+        if (gameState.currentView === 'map') {
+            const currentNode = mapState.nodes[mapState.currentNodeIndex];
+            let moved = false;
+            if (e.key === 'ArrowUp' && currentNode.connections.up !== undefined) { moved = true; mapState.currentNodeIndex = currentNode.connections.up; }
+            if (e.key === 'ArrowDown' && currentNode.connections.down !== undefined) { moved = true; mapState.currentNodeIndex = currentNode.connections.down; }
+            if (e.key === 'ArrowLeft' && currentNode.connections.left !== undefined) { moved = true; mapState.currentNodeIndex = currentNode.connections.left; }
+            if (e.key === 'ArrowRight' && currentNode.connections.right !== undefined) { moved = true; mapState.currentNodeIndex = currentNode.connections.right; }
+            if (moved) { e.preventDefault(); updateMapPlayerPosition(); }
+            if (e.key === 'Enter') { e.preventDefault(); enterStage(); }
+        } else if (gameState.currentView === 'stage') {
+            if (e.key.toLowerCase() === 't' && stageState.canTalkToNpc) {
+                triggerGemini(stageState.npc.stageId, npcPrompts);
+            }
+            if (e.key === 'Escape') { e.preventDefault(); exitStage(); }
+        }
+    }
+
+    function handleKeyUp(e) {
+        gameState.keys[e.key] = false;
+    }
+
+    function init() {
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        geminiCloseButton.addEventListener('click', closeGeminiBox);
+        setTimeout(() => {
+            switchView('map');
+            createMap();
+        }, 3000);
+        gameLoop();
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
