@@ -5,12 +5,22 @@ import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
 import PrefectureDetailModal from '@/components/PrefectureDetailModal';
 import LoginModal from '@/components/LoginModal';
+import MergeConflictModal from '@/components/MergeConflictModal';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 
 export default function Home() {
-  const { user, memories, addMemory, refreshMemories, signIn } = useGlobalContext();
+  const {
+    user,
+    memories,
+    addMemory,
+    refreshMemories,
+    signIn,
+    conflict,
+    onSelectLocal,
+    onSelectRemote,
+  } = useGlobalContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
@@ -163,6 +173,12 @@ export default function Home() {
           signIn();
           setIsLoginModalOpen(false);
         }}
+      />
+
+      <MergeConflictModal
+        isOpen={!!conflict}
+        onSelectLocal={onSelectLocal}
+        onSelectRemote={onSelectRemote}
       />
 
       {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
