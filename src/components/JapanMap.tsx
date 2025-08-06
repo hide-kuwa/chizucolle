@@ -39,8 +39,8 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-box border bg-surface p-4 shadow-card">
-      <svg viewBox="0 0 960 960" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
+    <div className="w-full max-w-4xl sm:mx-auto rounded-box border bg-surface p-2 sm:p-4 shadow-card">
+      <svg viewBox="0 0 688 684" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
         <defs>
           {memories.map(memory => (
             (memory.photos && memory.photos.length > 0) && (
@@ -52,19 +52,21 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
         </defs>
         <g onClick={(e) => e.stopPropagation()}>
           {prefectures.map(p => (
-              <path
-                key={p.id}
-                d={p.d}
-                fill={getFill(p.id)}
-                onClick={(e) => onPrefectureClick(p, e)}
-                onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-                className={`
-                  cursor-pointer stroke-text-secondary stroke-[0.5px]
-                  transition-all duration-200 ease-in-out
-                  hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
-                  ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
-                `}
-              />
+            <path
+              key={p.id}
+              d={p.d}
+              fill={getFill(p.id)}
+              stroke="#fff"
+              strokeWidth={0.5}
+              onClick={(e) => onPrefectureClick(p, e)}
+              onMouseEnter={(e) => onPrefectureHover(p.name, e)}
+              className={`
+                cursor-pointer
+                transition-all duration-200 ease-in-out
+                hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
+                ${p.id === tappedPrefectureId ? 'animate-float stroke-accent stroke-[2px]' : ''}
+              `}
+            />
           ))}
         </g>
       </svg>

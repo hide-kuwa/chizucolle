@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { prefectures } from '@/data/prefectures';
+import { useGlobalContext } from '@/context/AppContext';
 
 interface AddMemoryModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user, signIn } = useGlobalContext();
 
   if (!isOpen) return null;
 
@@ -36,6 +38,28 @@ const AddMemoryModal: React.FC<AddMemoryModalProps> = ({ isOpen, onClose, onUplo
       setLoading(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 animate-fade-in-scale">
+        <div className="flex w-full max-w-sm flex-col items-center space-y-4 rounded-2xl bg-surface p-6 text-center shadow-2xl">
+          <p className="text-text-primary">写真をアップロードするにはログインが必要です。</p>
+          <button
+            onClick={signIn}
+            className="w-full rounded-lg bg-primary py-2 font-semibold text-white transition hover:bg-blue-500"
+          >
+            Googleでログイン
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full rounded-lg bg-background py-2 font-semibold text-text-secondary transition hover:bg-slate-200"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 animate-fade-in-scale">

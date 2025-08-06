@@ -17,7 +17,7 @@ const formatUser = (user: FirebaseUser): User => ({
 });
 
 export const authService = {
-  signInWithGoogle: async (): Promise<void> => {
+  signInWithGoogle: async (): Promise<string | undefined> => {
     const provider = new GoogleAuthProvider();
     // ★★★【ここが、最後の鍵だ！】★★★
     // ログインの、まさにその瞬間に、ドライブへのアクセス許可も、同時に要求する！
@@ -25,8 +25,11 @@ export const authService = {
 
     if (isMobileDevice()) {
       await signInWithRedirect(auth, provider);
+      return undefined; // access token will be retrieved via getRedirectResult
     } else {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      return credential?.accessToken ?? undefined;
     }
   },
 
