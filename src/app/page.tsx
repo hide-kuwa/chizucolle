@@ -35,11 +35,6 @@ export default function Home() {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  const openAddModal = () => {
-    setSelectedPrefecture(null);
-    setIsModalOpen(true);
-  };
-
   const handlePrefectureClick = (
     prefecture: Prefecture,
     event: React.MouseEvent<SVGPathElement>,
@@ -100,21 +95,9 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
-      <header className="w-full bg-surface shadow-card">
-        <nav className="container mx-auto flex items-center justify-between px-4 py-2">
-          <h1 className="text-2xl font-bold text-primary">地図コレ</h1>
-          <div className="flex items-center space-x-4">
-            {user && (
-              <button
-                onClick={openAddModal}
-                className="rounded-button bg-primary px-3 py-1 text-white"
-              >
-                思い出を追加
-              </button>
-            )}
-            <Auth />
-          </div>
-        </nav>
+      <header className="pointer-events-none absolute top-0 left-0 right-0 flex justify-between p-4">
+        <h1 className="pointer-events-auto text-2xl font-bold text-primary">地図コレ</h1>
+        <div className="pointer-events-auto"><Auth /></div>
       </header>
 
       <div className="container mx-auto p-4 flex-grow flex flex-col items-center justify-center">
