@@ -23,6 +23,10 @@ interface AppContextType {
   conflict: { local: Memory[]; remote: Memory[] } | null;
   onSelectLocal: () => Promise<void>;
   onSelectRemote: () => Promise<void>;
+  isInitialSetupComplete: boolean;
+  setIsInitialSetupComplete: (value: boolean) => void;
+  registrationsSinceLastAd: number;
+  incrementRegistrationAndCheckAd: () => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -33,6 +37,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [memories, setMemories] = useState<Memory[]>([]);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ local: Memory[]; remote: Memory[] } | null>(null);
+  const [isInitialSetupComplete, setIsInitialSetupComplete] = useState(false);
+  const [registrationsSinceLastAd, setRegistrationsSinceLastAd] = useState(0);
 
   const memoriesEqual = (a: Memory[], b: Memory[]) => {
     if (a.length !== b.length) return false;
@@ -159,6 +165,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // onAuthStateChanged will handle cleanup
   };
 
+  const incrementRegistrationAndCheckAd = useCallback(() => {
+    if (!isInitialSetupComplete) return false;
+    let shouldShow = false;
+    setRegistrationsSinceLastAd(prev => {
+      if (prev === 0 || prev === 3) {
+        shouldShow = true;
+        return 1;
+      }
+      return prev + 1;
+    });
+    return shouldShow;
+  }, [isInitialSetupComplete]);
+
   const addMemory = useCallback(
     async (prefectureId: string, photos: File[]) => {
       if (!user) throw new Error('User must be logged in to add memories.');
@@ -272,6 +291,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     conflict,
     onSelectLocal,
     onSelectRemote,
+    isInitialSetupComplete,
+    setIsInitialSetupComplete,
+    registrationsSinceLastAd,
+    incrementRegistrationAndCheckAd,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
