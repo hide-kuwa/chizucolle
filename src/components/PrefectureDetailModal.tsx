@@ -72,7 +72,7 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
     <div
       ref={modalRef}
       style={{ position: 'absolute', left: adjustedPos.x, top: adjustedPos.y }}
-      className="pointer-events-auto flex w-80 flex-col overflow-hidden rounded-lg border-2 border-text-primary bg-surface shadow-2xl"
+      className="pointer-events-auto z-50 flex w-80 flex-col overflow-hidden rounded-lg border-2 border-text-primary bg-surface shadow-2xl"
     >
       <div className="flex items-center justify-between bg-primary p-2 text-white">
         <h3 className="font-bold">{prefecture.name}</h3>

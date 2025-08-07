@@ -168,7 +168,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-background">
+    <main className="relative flex min-h-screen flex-col bg-background">
       <header className="w-full bg-surface shadow-card">
         <nav className="container mx-auto flex items-center justify-between px-4 py-2">
           <h1 className="text-2xl font-bold text-primary">地図コレ</h1>
