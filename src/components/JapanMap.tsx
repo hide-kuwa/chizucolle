@@ -57,7 +57,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                   ${p.id === tappedPrefectureId
                     ? 'animate-float stroke-accent stroke-[2px]'
                     : hasPhotos
-                      ? 'stroke-accent stroke-[1.5px]'
+                      ? 'stroke-white stroke-[1.5px]'
                       : 'stroke-white stroke-[0.5px]'}
                 `}
               />
