@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
@@ -9,6 +9,11 @@ import MergeConflictModal from '@/components/MergeConflictModal';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
+
+type WindowState = {
+  prefecture: Prefecture;
+  zIndex: number;
+};
 
 export default function Home() {
   const {
@@ -22,60 +27,45 @@ export default function Home() {
     onSelectRemote,
   } = useGlobalContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
-  const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [showPrefectureNames, setShowPrefectureNames] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [openWindows, setOpenWindows] = useState<WindowState[]>([]);
+  const [nextZIndex, setNextZIndex] = useState(100);
 
-  useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
+  const handlePrefectureClick = (prefecture: Prefecture) => {
+    const existingWindowIndex = openWindows.findIndex(w => w.prefecture.id === prefecture.id);
 
-  const handlePrefectureClick = (
-    prefecture: Prefecture,
-    event: React.MouseEvent<SVGPathElement>,
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const position = {
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY + rect.height / 2,
-    };
-    setPopupPosition(position);
-
-    if (isTouchDevice) {
-      if (tappedPrefectureId === prefecture.id) {
-        setSelectedPrefecture(prefecture);
-        setIsDetailModalOpen(true);
-        setTappedPrefectureId(null);
-      } else {
-        setTappedPrefectureId(prefecture.id);
-        setIsDetailModalOpen(false);
-      }
+    if (existingWindowIndex !== -1) {
+      handleFocus(prefecture.id);
     } else {
-      setSelectedPrefecture(prefecture);
-      setIsDetailModalOpen(true);
+      setOpenWindows(prev => [...prev, { prefecture, zIndex: nextZIndex }]);
+      setNextZIndex(prev => prev + 1);
     }
   };
 
-  const handleMapBackgroundClick = () => {
-    setTappedPrefectureId(null);
+  const handleClose = (prefectureId: string) => {
+    setOpenWindows(prev => prev.filter(w => w.prefecture.id !== prefectureId));
   };
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedPrefecture(null);
+  const handleFocus = (prefectureId: string) => {
+    const windowIndex = openWindows.findIndex(w => w.prefecture.id === prefectureId);
+    if (windowIndex !== -1 && openWindows[windowIndex].zIndex < nextZIndex - 1) {
+      setOpenWindows(prev =>
+        prev.map(w =>
+          w.prefecture.id === prefectureId ? { ...w, zIndex: nextZIndex } : w,
+        ),
+      );
+      setNextZIndex(prev => prev + 1);
+    }
   };
 
-  const handleAddPhotoRequest = () => {
+  const handleAddPhotoRequest = (prefecture: Prefecture) => {
+    setSelectedPrefecture(prefecture);
     if (user) {
-      setIsDetailModalOpen(false);
       setIsModalOpen(true);
     } else {
-      setIsDetailModalOpen(false);
       setIsLoginModalOpen(true);
     }
   };
@@ -118,24 +108,22 @@ export default function Home() {
           onPrefectureClick={handlePrefectureClick}
           onPrefectureHover={handlePrefectureHover}
           onMouseLeave={handleMouseLeave}
-          tappedPrefectureId={tappedPrefectureId}
-          onMapBackgroundClick={handleMapBackgroundClick}
         />
       </div>
 
-      {/* ↓↓↓ ここの部分が、一番大事な心臓部だ！ ↓↓↓ */}
-
-      {/* 県が選択されて、ポップアップの位置が決まったら、詳細モーダルを開く！ */}
-      {selectedPrefecture && isDetailModalOpen && popupPosition && (
-        // Display the prefecture details in a dedicated modal
-        <PrefectureDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={closeDetailModal}
-          prefecture={selectedPrefecture}
-          onAddPhoto={handleAddPhotoRequest}
-          position={popupPosition}
-        />
-      )}
+      <div className="absolute inset-0 pointer-events-none">
+        {openWindows.map(windowState => (
+          <PrefectureDetailModal
+            key={windowState.prefecture.id}
+            isOpen={true}
+            prefecture={windowState.prefecture}
+            onClose={() => handleClose(windowState.prefecture.id)}
+            onAddPhoto={() => handleAddPhotoRequest(windowState.prefecture)}
+            zIndex={windowState.zIndex}
+            onFocus={() => handleFocus(windowState.prefecture.id)}
+          />
+        ))}
+      </div>
 
       {/* 写真追加モーダル */}
       <AddMemoryModal

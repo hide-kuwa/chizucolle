@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { Rnd } from 'react-rnd';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 
@@ -8,33 +9,15 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAddPhoto: () => void;
-  position: { x: number; y: number };
+  zIndex: number;
+  onFocus: () => void;
 }
 
-export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, position }: Props) {
+export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, zIndex, onFocus }: Props) {
   const { memories, updateMemoryStatus } = useGlobalContext();
   if (!isOpen) return null;
   const memory = memories.find(m => m.prefectureId === prefecture.id);
   const currentStatus = memory?.status || 'unvisited';
-
-  const getModalStyle = () => {
-    const modalWidth = 320; // w-80
-    const modalHeight = 250; // modal approximate height
-    const offset = 24; // distance from cursor
-
-    const isRightSide = position.x > window.innerWidth / 2;
-
-    let top = position.y - modalHeight / 2;
-    const left = isRightSide
-      ? position.x - modalWidth - offset
-      : position.x + offset;
-
-    if (top < 16) top = 16;
-    if (top + modalHeight > window.innerHeight - 16)
-      top = window.innerHeight - modalHeight - 16;
-
-    return { top: `${top}px`, left: `${left}px` };
-  };
 
   const StatusButton = ({ status, label }: { status: VisitStatus; label: string }) => {
     const isActive = currentStatus === status;
@@ -63,23 +46,38 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
   };
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
-      <div
-        style={getModalStyle()}
-        className="absolute w-80 rounded-2xl bg-surface p-5 shadow-2xl transition-all duration-300 animate-fade-in-scale"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-4 text-xl font-bold text-primary">{prefecture.name}</h2>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <StatusButton status="visited" label="訪れた" />
-            <StatusButton status="lived" label="住んでいた" />
-            <StatusButton status="passed_through" label="通り過ぎた" />
-            <StatusButton status="unvisited" label="未訪問" />
-          </div>
+    <Rnd
+      default={{
+        x: window.innerWidth / 2 - 160,
+        y: 150,
+        width: 320,
+        height: 'auto',
+      }}
+      minWidth={280}
+      minHeight={250}
+      bounds="parent"
+      onDragStart={onFocus}
+      onClick={onFocus}
+      style={{ zIndex }}
+      className="flex flex-col overflow-hidden rounded-lg border-2 border-text-primary bg-surface shadow-2xl"
+      dragHandleClassName="handle"
+    >
+      <div className="handle flex cursor-move items-center justify-between bg-primary p-2 text-white">
+        <h3 className="font-bold">{prefecture.name}</h3>
+        <button onClick={onClose} className="rounded-full px-2 py-0 hover:bg-blue-700">
+          ×
+        </button>
+      </div>
 
-          <div className="my-3 border-t border-background"></div>
-
+      <div className="space-y-4 p-4">
+        <div className="grid grid-cols-2 gap-3">
+          <StatusButton status="visited" label="訪れた" />
+          <StatusButton status="lived" label="住んでいた" />
+          <StatusButton status="passed_through" label="通り過ぎた" />
+          <StatusButton status="unvisited" label="未訪問" />
+        </div>
+        <div className="border-t border-background"></div>
+        <div>
           <button
             onClick={onAddPhoto}
             className="flex w-full items-center justify-center space-x-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-500"
@@ -88,7 +86,7 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
           </button>
         </div>
       </div>
-    </div>
+    </Rnd>
   );
 }
 

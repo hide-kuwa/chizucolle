@@ -5,17 +5,12 @@ import { prefectures } from '../data/prefectures';
 
 interface JapanMapProps {
   memories: Memory[];
-  onPrefectureClick: (
-    prefecture: Prefecture,
-    event: React.MouseEvent<SVGPathElement>,
-  ) => void;
+  onPrefectureClick: (prefecture: Prefecture) => void;
   onPrefectureHover: (
     name: string,
     event: React.MouseEvent<SVGPathElement>,
   ) => void;
   onMouseLeave: () => void;
-  tappedPrefectureId: string | null;
-  onMapBackgroundClick: () => void;
 }
 
 const statusColors: Record<VisitStatus, string> = {
@@ -25,7 +20,7 @@ const statusColors: Record<VisitStatus, string> = {
   lived: '#fca5a5', // red-400
 };
 
-export default function JapanMap({ memories, onPrefectureClick, onPrefectureHover, onMouseLeave, tappedPrefectureId, onMapBackgroundClick }: JapanMapProps) {
+export default function JapanMap({ memories, onPrefectureClick, onPrefectureHover, onMouseLeave }: JapanMapProps) {
 
   const getFill = (prefectureId: string): string => {
     const memory = memories.find(m => m.prefectureId === prefectureId);
@@ -36,8 +31,8 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
 
   return (
     <div className="w-full max-w-4xl sm:mx-auto rounded-box border bg-surface p-2 sm:p-4 shadow-card">
-      <svg viewBox="0 0 688 684" className="w-full h-auto" onMouseLeave={onMouseLeave} onClick={onMapBackgroundClick}>
-        <g onClick={(e) => e.stopPropagation()}>
+      <svg viewBox="0 0 688 684" className="w-full h-auto" onMouseLeave={onMouseLeave}>
+        <g>
           {prefectures.map(p => {
             const memory = memories.find(m => m.prefectureId === p.id);
             const hasPhotos = memory?.photos && memory.photos.length > 0;
@@ -48,7 +43,7 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                 key={p.id}
                 d={p.d}
                 fill={getFill(p.id)}
-                onClick={(e) => onPrefectureClick(p, e)}
+                onClick={() => onPrefectureClick(p)}
                 onMouseEnter={(e) => onPrefectureHover(p.name, e)}
                 style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 className={`
@@ -57,11 +52,9 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                   hover:scale-[1.03]
                   hover:stroke-primary hover:stroke-[1.5px]
                   hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)]
-                  ${p.id === tappedPrefectureId
-                    ? 'animate-float stroke-accent stroke-[2px]'
-                    : hasPhotos
-                      ? 'stroke-white stroke-[1.5px]'
-                      : 'stroke-white stroke-[0.5px]'}
+                  ${hasPhotos
+                    ? 'stroke-white stroke-[1.5px]'
+                    : 'stroke-white stroke-[0.5px]'}
                 `}
               />
             );
