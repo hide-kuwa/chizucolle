@@ -50,10 +50,13 @@ export default function JapanMap({ memories, onPrefectureClick, onPrefectureHove
                 fill={getFill(p.id)}
                 onClick={(e) => onPrefectureClick(p, e)}
                 onMouseEnter={(e) => onPrefectureHover(p.name, e)}
+                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 className={`
-                  cursor-pointer
+                  cursor-pointer transform origin-center
                   transition-all duration-200 ease-in-out
-                  hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]
+                  hover:scale-[1.03]
+                  hover:stroke-primary hover:stroke-[1.5px]
+                  hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)]
                   ${p.id === tappedPrefectureId
                     ? 'animate-float stroke-accent stroke-[2px]'
                     : hasPhotos
