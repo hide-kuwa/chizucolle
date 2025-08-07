@@ -12,12 +12,6 @@ import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 import { prefectures } from '@/data/prefectures';
 
-// ウィンドウの状態を管理するための型定義
-type WindowState = {
-  prefecture: Prefecture;
-  zIndex: number;
-};
-
 declare global {
   interface Window {
     adsbygoogle?: unknown[];
@@ -96,9 +90,8 @@ export default function Home() {
   const [showPrefectureNames, setShowPrefectureNames] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
-  // 複数のウィンドウを管理するためのstate
-  const [openWindows, setOpenWindows] = useState<WindowState[]>([]);
-  const [nextZIndex, setNextZIndex] = useState(100);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -118,7 +111,10 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handlePrefectureClick = (prefecture: Prefecture) => {
+  const handlePrefectureClick = (
+    prefecture: Prefecture,
+    event: React.MouseEvent<SVGPathElement>,
+  ) => {
     if (isTouchDevice) {
       if (tappedPrefectureId === prefecture.id) {
         setTappedPrefectureId(null);
@@ -128,33 +124,16 @@ export default function Home() {
       }
     }
 
-    const existingWindowIndex = openWindows.findIndex(
-      w => w.prefecture.id === prefecture.id,
-    );
-
-    if (existingWindowIndex !== -1) {
-      handleFocus(prefecture.id);
-    } else {
-      setOpenWindows(prev => [...prev, { prefecture, zIndex: nextZIndex }]);
-      setNextZIndex(prev => prev + 1);
-    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPopupPosition({ x: rect.right + window.scrollX + 8, y: rect.top + window.scrollY });
+    setSelectedPrefecture(prefecture);
+    setIsDetailModalOpen(true);
   };
 
-  const handleClose = (prefectureId: string) => {
-    setOpenWindows(prev => prev.filter(w => w.prefecture.id !== prefectureId));
-  };
-
-  const handleFocus = (prefectureId: string) => {
-    const windowIndex = openWindows.findIndex(w => w.prefecture.id === prefectureId);
-    if (windowIndex === -1) return;
-    if (openWindows[windowIndex].zIndex < nextZIndex - 1) {
-      setOpenWindows(prev =>
-        prev.map(w =>
-          w.prefecture.id === prefectureId ? { ...w, zIndex: nextZIndex } : w,
-        ),
-      );
-      setNextZIndex(prev => prev + 1);
-    }
+  const handleClose = () => {
+    setIsDetailModalOpen(false);
+    setSelectedPrefecture(null);
+    setPopupPosition(null);
   };
 
   const handleMapBackgroundClick = () => {
@@ -232,7 +211,7 @@ export default function Home() {
 
             <JapanMap
               memories={memories}
-              onPrefectureClick={(p) => handlePrefectureClick(p)}
+              onPrefectureClick={(p, e) => handlePrefectureClick(p, e)}
               onPrefectureHover={handlePrefectureHover}
               onMouseLeave={handleMouseLeave}
               tappedPrefectureId={tappedPrefectureId}
@@ -253,17 +232,15 @@ export default function Home() {
       <FooterAd />
 
       <div className="absolute inset-0 pointer-events-none">
-        {openWindows.map(windowState => (
+        {view === 'map' && selectedPrefecture && popupPosition && (
           <PrefectureDetailModal
-            key={windowState.prefecture.id}
-            isOpen={true}
-            prefecture={windowState.prefecture}
-            onClose={() => handleClose(windowState.prefecture.id)}
-            onAddPhoto={() => handleAddPhotoRequest(windowState.prefecture)}
-            zIndex={windowState.zIndex}
-            onFocus={() => handleFocus(windowState.prefecture.id)}
+            isOpen={isDetailModalOpen}
+            prefecture={selectedPrefecture}
+            onClose={handleClose}
+            onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture!)}
+            position={popupPosition}
           />
-        ))}
+        )}
       </div>
 
       <AddMemoryModal

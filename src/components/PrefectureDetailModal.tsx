@@ -1,6 +1,5 @@
 'use client';
-import React from 'react';
-import { Rnd } from 'react-rnd';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 
@@ -9,12 +8,36 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAddPhoto: () => void;
-  zIndex: number;
-  onFocus: () => void;
+  position: { x: number; y: number };
 }
 
-export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, zIndex, onFocus }: Props) {
+export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, position }: Props) {
   const { memories, updateMemoryStatus } = useGlobalContext();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [adjustedPos, setAdjustedPos] = useState(position);
+
+  useEffect(() => {
+    const adjustPosition = () => {
+      const width = modalRef.current?.offsetWidth || 0;
+      const height = modalRef.current?.offsetHeight || 0;
+      const margin = 16;
+      let x = position.x;
+      let y = position.y;
+      if (x + width + margin > window.innerWidth) {
+        x = position.x - width - margin;
+      }
+      if (x < margin) x = margin;
+      if (y + height + margin > window.innerHeight) {
+        y = window.innerHeight - height - margin;
+      }
+      if (y < margin) y = margin;
+      setAdjustedPos({ x, y });
+    };
+    adjustPosition();
+    window.addEventListener('resize', adjustPosition);
+    return () => window.removeEventListener('resize', adjustPosition);
+  }, [position]);
+
   if (!isOpen) return null;
   const memory = memories.find(m => m.prefectureId === prefecture.id);
   const currentStatus = memory?.status || 'unvisited';
@@ -46,23 +69,12 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
   };
 
   return (
-    <Rnd
-      default={{
-        x: window.innerWidth / 2 - 160,
-        y: 150,
-        width: 320,
-        height: 'auto',
-      }}
-      minWidth={280}
-      minHeight={250}
-      bounds="parent"
-      onDragStart={onFocus}
-      onClick={onFocus}
-      style={{ zIndex }}
-      className="pointer-events-auto flex flex-col overflow-hidden rounded-lg border-2 border-text-primary bg-surface shadow-2xl"
-      dragHandleClassName="handle"
+    <div
+      ref={modalRef}
+      style={{ position: 'absolute', left: adjustedPos.x, top: adjustedPos.y }}
+      className="pointer-events-auto flex w-80 flex-col overflow-hidden rounded-lg border-2 border-text-primary bg-surface shadow-2xl"
     >
-      <div className="handle flex cursor-move items-center justify-between bg-primary p-2 text-white">
+      <div className="flex items-center justify-between bg-primary p-2 text-white">
         <h3 className="font-bold">{prefecture.name}</h3>
         <button onClick={onClose} className="rounded-full px-2 py-0 hover:bg-blue-700">
           ×
@@ -86,7 +98,7 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
           </button>
         </div>
       </div>
-    </Rnd>
+    </div>
   );
 }
 
