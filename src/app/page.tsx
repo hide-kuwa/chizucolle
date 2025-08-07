@@ -12,6 +12,12 @@ import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 import { prefectures } from '@/data/prefectures';
 
+// ウィンドウの状態を管理するための型定義
+type WindowState = {
+  prefecture: Prefecture;
+  zIndex: number;
+};
+
 declare global {
   interface Window {
     adsbygoogle?: unknown[];
@@ -83,15 +89,16 @@ export default function Home() {
   } = useGlobalContext();
   const [view, setView] = useState<'map' | 'gallery'>('map');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [showPrefectureNames, setShowPrefectureNames] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+  // 複数のウィンドウを管理するためのstate
+  const [openWindows, setOpenWindows] = useState<WindowState[]>([]);
+  const [nextZIndex, setNextZIndex] = useState(100);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -111,29 +118,42 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handlePrefectureClick = (
-    prefecture: Prefecture,
-    event: React.MouseEvent<SVGPathElement>,
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const position = {
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY + rect.height / 2,
-    };
-    setPopupPosition(position);
-
+  const handlePrefectureClick = (prefecture: Prefecture) => {
     if (isTouchDevice) {
       if (tappedPrefectureId === prefecture.id) {
-        setSelectedPrefecture(prefecture);
-        setIsDetailModalOpen(true);
         setTappedPrefectureId(null);
       } else {
         setTappedPrefectureId(prefecture.id);
-        setIsDetailModalOpen(false);
+        return;
       }
+    }
+
+    const existingWindowIndex = openWindows.findIndex(
+      w => w.prefecture.id === prefecture.id,
+    );
+
+    if (existingWindowIndex !== -1) {
+      handleFocus(prefecture.id);
     } else {
-      setSelectedPrefecture(prefecture);
-      setIsDetailModalOpen(true);
+      setOpenWindows(prev => [...prev, { prefecture, zIndex: nextZIndex }]);
+      setNextZIndex(prev => prev + 1);
+    }
+  };
+
+  const handleClose = (prefectureId: string) => {
+    setOpenWindows(prev => prev.filter(w => w.prefecture.id !== prefectureId));
+  };
+
+  const handleFocus = (prefectureId: string) => {
+    const windowIndex = openWindows.findIndex(w => w.prefecture.id === prefectureId);
+    if (windowIndex === -1) return;
+    if (openWindows[windowIndex].zIndex < nextZIndex - 1) {
+      setOpenWindows(prev =>
+        prev.map(w =>
+          w.prefecture.id === prefectureId ? { ...w, zIndex: nextZIndex } : w,
+        ),
+      );
+      setNextZIndex(prev => prev + 1);
     }
   };
 
@@ -141,17 +161,11 @@ export default function Home() {
     setTappedPrefectureId(null);
   };
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedPrefecture(null);
-  };
-
-  const handleAddPhotoRequest = () => {
+  const handleAddPhotoRequest = (prefecture: Prefecture) => {
+    setSelectedPrefecture(prefecture);
     if (user) {
-      setIsDetailModalOpen(false);
       setIsModalOpen(true);
     } else {
-      setIsDetailModalOpen(false);
       setIsLoginModalOpen(true);
     }
   };
@@ -218,7 +232,7 @@ export default function Home() {
 
             <JapanMap
               memories={memories}
-              onPrefectureClick={handlePrefectureClick}
+              onPrefectureClick={(p) => handlePrefectureClick(p)}
               onPrefectureHover={handlePrefectureHover}
               onMouseLeave={handleMouseLeave}
               tappedPrefectureId={tappedPrefectureId}
@@ -238,15 +252,19 @@ export default function Home() {
 
       <FooterAd />
 
-      {selectedPrefecture && isDetailModalOpen && popupPosition && (
-        <PrefectureDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={closeDetailModal}
-          prefecture={selectedPrefecture}
-          onAddPhoto={handleAddPhotoRequest}
-          position={popupPosition}
-        />
-      )}
+      <div className="absolute inset-0 pointer-events-none">
+        {openWindows.map(windowState => (
+          <PrefectureDetailModal
+            key={windowState.prefecture.id}
+            isOpen={true}
+            prefecture={windowState.prefecture}
+            onClose={() => handleClose(windowState.prefecture.id)}
+            onAddPhoto={() => handleAddPhotoRequest(windowState.prefecture)}
+            zIndex={windowState.zIndex}
+            onFocus={() => handleFocus(windowState.prefecture.id)}
+          />
+        ))}
+      </div>
 
       <AddMemoryModal
         isOpen={isModalOpen}
