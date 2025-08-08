@@ -4,11 +4,14 @@ import MapViewport from './MapViewport';
 import { usePrefInteract } from '@/hooks/usePrefInteract';
 import HoverLabel from './HoverLabel';
 import ClickPopover from './ClickPopover';
+import ActionDock from './ActionDock';
 
 export default function JapanMapInteractive(props:{
   renderMap:()=>React.ReactNode;
   renderClickContent:(code:string)=>React.ReactNode;
   onOpenWindow:(code:string, initial:{left:number;top:number})=>void;
+  onSetState:(code:string, st:'lived'|'visited'|'passed'|'unvisited')=>void;
+  onAddPhoto:(code:string)=>void;
 }){
   const hostRef = useRef<HTMLDivElement>(null);
   const [overlayEl, setOverlayEl] = useState<HTMLDivElement|null>(null);
@@ -39,9 +42,14 @@ export default function JapanMapInteractive(props:{
       overlayChildren={
         <>
           <HoverLabel code={hover.code} label={hover.label} pt={hoverPt}/>
-          <ClickPopover open={clickAt.open} pt={clickAt.pt} onClose={()=>setClickAt(s=>({...s,open:false}))}>
+          <ClickPopover open={!!clickAt.open} pt={clickAt.pt} onClose={()=>setClickAt(s=>({...s,open:false}))}>
             {clickAt.code ? props.renderClickContent(clickAt.code) : null}
           </ClickPopover>
+          <ActionDock
+            visible={!!clickAt.code}
+            onSet={(st)=> clickAt.code && props.onSetState(clickAt.code, st)}
+            onAddPhoto={()=> clickAt.code && props.onAddPhoto(clickAt.code)}
+          />
         </>
       }
     >
