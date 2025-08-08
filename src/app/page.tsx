@@ -8,7 +8,6 @@ import MergeConflictModal from '@/components/MergeConflictModal';
 import GalleryView from '@/components/GalleryView';
 import FloatingActionDock from '@/components/FloatingActionDock';
 import HoverLabelFixed from '@/components/HoverLabelFixed';
-import MapViewport from '@/components/MapViewport';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
@@ -93,7 +92,6 @@ export default function Home() {
   const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
   const [hover, setHover] = useState<{open:boolean; name:string; pt:{x:number;y:number}}>({open:false,name:'',pt:{x:0,y:0}});
   const [dockAt, setDockAt] = useState<{open:boolean; pt:{x:number;y:number}}>({open:false, pt:{x:0,y:0}});
-  const [wishIds, setWishIds] = useState<Set<string>>(new Set());
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
@@ -190,23 +188,6 @@ export default function Home() {
     if (pref) handleAddPhotoRequest(pref);
   };
 
-  const toggleWish = () => {
-    if (!selectedPrefecture) return;
-    setWishIds(prev => {
-      const next = new Set(prev);
-      if (next.has(selectedPrefecture.id)) next.delete(selectedPrefecture.id);
-      else next.add(selectedPrefecture.id);
-      return next;
-    });
-  };
-
-  const handleAddPhotoNear = () => {
-    if (!selectedPrefecture) return;
-    const p = dockAt.pt;
-    setPopupPosition({ x: p.x + window.scrollX, y: p.y + window.scrollY });
-    openPhotoModal(selectedPrefecture.id);
-  };
-
   const hasPhotos = selectedPrefecture
     ? !!(memories.find((m) => m.prefectureId === selectedPrefecture.id)?.photos?.length)
     : false;
@@ -239,42 +220,33 @@ export default function Home() {
 
       <div className="container mx-auto flex-grow p-4 flex flex-col items-center justify-center">
         {view === 'map' && (
-          <MapViewport
-            onReady={({ overlay }) => {void overlay;}}
-            overlayChildren={
-              <>
-                <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
-                <FloatingActionDock
-                  open={dockAt.open && !!selectedPrefecture}
-                  pt={dockAt.pt}
-                  hasPhotos={hasPhotos}
-                  onSet={(st)=> selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
-                  onAddPhoto={handleAddPhotoNear}
-                  onWish={toggleWish}
-                />
-              </>
-            }
-          >
-            <div>
-              <JapanMap
-                memories={memories}
-                onPrefectureClick={handlePrefectureClick}
-                onPrefectureHover={handlePrefectureHover}
-                onMouseLeave={handleMouseLeave}
-                onMapBackgroundClick={closeDock}
-                wishIds={wishIds}
-              />
-            </div>
-          </MapViewport>
+          <>
+            <JapanMap
+              memories={memories}
+              onPrefectureClick={handlePrefectureClick}
+              onPrefectureHover={handlePrefectureHover}
+              onMouseLeave={handleMouseLeave}
+              onMapBackgroundClick={closeDock}
+            />
+            <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
+
+            <FloatingActionDock
+              open={dockAt.open && !!selectedPrefecture}
+              pt={dockAt.pt}
+              hasPhotos={hasPhotos}
+              onSet={(st)=> selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
+              onAddPhoto={()=> selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
+            />
+          </>
         )}
 
-        {view === 'gallery' && selectedPrefecture && (
-          <GalleryView
-            prefecture={selectedPrefecture}
-            onBackToMap={handleBackToMap}
-            onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture)}
-          />
-        )}
+          {view === 'gallery' && selectedPrefecture && (
+            <GalleryView
+              prefecture={selectedPrefecture}
+              onBackToMap={handleBackToMap}
+              onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture)}
+            />
+          )}
       </div>
 
       <FooterAd />

@@ -8,7 +8,6 @@ type Props = {
   onPrefectureHover: (name: string, event: React.MouseEvent<SVGPathElement>) => void;
   onMouseLeave: () => void;
   onMapBackgroundClick?: () => void;
-  wishIds?: Set<string>;
 };
 
 const PREF_JP: Record<string, string> = {
@@ -28,7 +27,6 @@ export default function JapanMap({
   onPrefectureHover,
   onMouseLeave,
   onMapBackgroundClick,
-  wishIds = new Set(),
 }: Props) {
   const getFill = (prefectureId: string): string => {
     const m = memories.find(x => x.prefectureId === prefectureId);
@@ -53,7 +51,6 @@ export default function JapanMap({
                 d={p.d}
                 data-pref={p.id}
                 data-name={PREF_JP[p.id]}
-                data-wish={wishIds.has(p.id) ? '1' : undefined}
                 fill={getFill(p.id)}
                 onClick={(e) => { e.stopPropagation(); onPrefectureClick(p, e); }}
                 onMouseEnter={(e) => onPrefectureHover(PREF_JP[p.id], e)}
