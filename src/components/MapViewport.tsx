@@ -13,10 +13,12 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
   const [scale, setScale] = useState(1);
   const [tx, setTx] = useState(0);
   const [ty, setTy] = useState(0);
-  const min = 0.5, max = 6;
+  const [minScale, setMinScale] = useState(0.5);
+  const max = 6;
 
   const apply = useCallback((s: number, x: number, y: number) => {
     const st = stageRef.current;
@@ -27,16 +29,30 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   const fitAll = useCallback(() => {
     const c = containerRef.current, st = stageRef.current;
     if (!c || !st) return;
-    const prev = st.style.transform;
+    const old = st.style.transform;
     st.style.transform = 'translate(0px,0px) scale(1)';
+
     const cr = c.getBoundingClientRect();
-    const target = st.firstElementChild as HTMLElement | null;
-    const tr = target ? target.getBoundingClientRect() : st.getBoundingClientRect();
-    st.style.transform = prev;
-    const s = Math.min(cr.width / tr.width, cr.height / tr.height) * 0.98;
-    const nx = (cr.width - tr.width * s) / 2;
-    const ny = (cr.height - tr.height * s) / 2;
+    const sr = st.getBoundingClientRect();
+    const els = Array.from(st.querySelectorAll('[data-pref]')) as HTMLElement[];
+    if (!els.length) { st.style.transform = old; return; }
+
+    let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+    for (const el of els) {
+      const r = el.getBoundingClientRect();
+      L = Math.min(L, r.left); T = Math.min(T, r.top);
+      R = Math.max(R, r.right); B = Math.max(B, r.bottom);
+    }
+    const W0 = R - L, H0 = B - T;                 // 県群のピクセル幅・高さ（変換なし）
+    const L0 = L - sr.left, T0 = T - sr.top;      // ステージ座標系に変換
+
+    const s = Math.min(cr.width / W0, cr.height / H0) * 0.98;
+    const nx = (cr.width - s * W0) / 2 - s * L0;
+    const ny = (cr.height - s * H0) / 2 - s * T0;
+
+    setMinScale(s);
     setScale(s); setTx(nx); setTy(ny);
+    st.style.transform = old;
   }, []);
 
   useEffect(() => { fitAll(); }, [fitAll]);
@@ -77,7 +93,7 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
       if (p1 && p2) {
         const dx = p2.x - p1.x, dy = p2.y - p1.y, cx = (p1.x + p2.x) / 2, cy = (p1.y + p2.y) / 2;
         const dist = Math.hypot(dx, dy); c.__ld ??= dist; const factor = dist / c.__ld; c.__ld = dist;
-        const ns = Math.max(min, Math.min(max, scale * factor));
+        const ns = Math.max(minScale, Math.min(max, scale * factor));
         const sp = screenPoint(cx, cy);
         const ox = (sp.x - tx) / scale, oy = (sp.y - ty) / scale;
         setScale(ns); setTx(sp.x - ox * ns); setTy(sp.y - oy * ns);
@@ -91,19 +107,22 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
     c.addEventListener('pointerdown', onDown); c.addEventListener('pointermove', onMove);
     c.addEventListener('pointerup', onUp); c.addEventListener('pointercancel', onUp);
     return () => { c.removeEventListener('pointerdown', onDown); c.removeEventListener('pointermove', onMove); c.removeEventListener('pointerup', onUp); c.removeEventListener('pointercancel', onUp); };
-  }, [scale, tx, ty, screenPoint]);
+  }, [scale, tx, ty, screenPoint, minScale]);
 
   const zoomTo = useCallback((ns: number) => {
     const c = containerRef.current; if (!c) return;
     const cr = c.getBoundingClientRect();
     const sp = { x: cr.width / 2, y: cr.height / 2 };
     const ox = (sp.x - tx) / scale, oy = (sp.y - ty) / scale;
-    const cl = Math.max(min, Math.min(max, ns));
+    const cl = Math.max(minScale, Math.min(max, ns));
     setScale(cl); setTx(sp.x - ox * cl); setTy(sp.y - oy * cl);
-  }, [scale, tx, ty]);
+  }, [scale, tx, ty, minScale]);
 
-  const slider = useMemo(() => Math.round(((scale - min) / (max - min)) * 100), [scale]);
-  const onSlider = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseInt(e.target.value, 10); zoomTo(min + (max - min) * (v / 100)); };
+  const slider = useMemo(() => Math.round(((scale - minScale) / (max - minScale)) * 100), [scale, minScale]);
+  const onSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseInt(e.target.value, 10);
+    zoomTo(minScale + (max - minScale) * (v / 100));
+  };
 
   return (
     <div ref={containerRef} className="map-container w-full h-[100vh] bg-white">
