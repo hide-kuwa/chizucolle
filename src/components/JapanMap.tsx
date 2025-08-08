@@ -11,10 +11,10 @@ type Props = {
 };
 
 const statusColors: Record<VisitStatus, string> = {
-  unvisited: '#e5e7eb',
-  visited: '#93c5fd',
-  passed: '#86efac',
-  lived: '#fca5a5',
+  lived: '#10b981',
+  visited: '#ef4444',
+  passed: '#60a5fa',
+  unvisited: '#d1d5db',
 };
 
 export default function JapanMap({
