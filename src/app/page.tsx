@@ -188,7 +188,9 @@ export default function Home() {
     if (pref) handleAddPhotoRequest(pref);
   };
 
-  const hasPhotos = selectedPrefecture ? !!(memories.find(m=>m.prefectureId===selectedPrefecture.id)?.photos?.length) : false;
+  const hasPhotos = selectedPrefecture
+    ? !!(memories.find((m) => m.prefectureId === selectedPrefecture.id)?.photos?.length)
+    : false;
 
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
