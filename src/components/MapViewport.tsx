@@ -1,8 +1,13 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-type Ready = { container: HTMLDivElement; stage: HTMLDivElement; overlay: HTMLDivElement; screenPoint: (x: number, y: number) => { x: number; y: number } };
-type Props = { children: React.ReactNode; overlayChildren?: React.ReactNode; onReady?: (api: Ready) => void; };
+type Ready = {
+  container: HTMLDivElement;
+  stage: HTMLDivElement;
+  overlay: HTMLDivElement;
+  screenPoint: (x: number, y: number) => { x: number; y: number };
+};
+type Props = { children: React.ReactNode; overlayChildren?: React.ReactNode; onReady?: (api: Ready) => void };
 
 export default function MapViewport({ children, overlayChildren, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,24 +24,36 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   }, []);
   useEffect(() => { apply(scale, tx, ty); }, [scale, tx, ty, apply]);
 
-  useEffect(() => {
+  const fitAll = useCallback(() => {
     const c = containerRef.current, st = stageRef.current;
     if (!c || !st) return;
-    const old = st.style.transform;
+    const prev = st.style.transform;
     st.style.transform = 'translate(0px,0px) scale(1)';
-    const rC = c.getBoundingClientRect();
+    const cr = c.getBoundingClientRect();
     const target = st.firstElementChild as HTMLElement | null;
-    const rT = target ? target.getBoundingClientRect() : st.getBoundingClientRect();
-    st.style.transform = old;
-    const fit = Math.min(rC.width / rT.width, rC.height / rT.height) * 0.72;
-    const nx = (rC.width - rT.width * fit) / 2;
-    const ny = (rC.height - rT.height * fit) / 2;
-    setScale(fit); setTx(nx); setTy(ny);
+    const tr = target ? target.getBoundingClientRect() : st.getBoundingClientRect();
+    st.style.transform = prev;
+    const s = Math.min(cr.width / tr.width, cr.height / tr.height) * 0.98;
+    const nx = (cr.width - tr.width * s) / 2;
+    const ny = (cr.height - tr.height * s) / 2;
+    setScale(s); setTx(nx); setTy(ny);
   }, []);
+
+  useEffect(() => { fitAll(); }, [fitAll]);
+
+  useEffect(() => {
+    const c = containerRef.current;
+    if (!c) return;
+    const ro = new ResizeObserver(() => fitAll());
+    ro.observe(c);
+    window.addEventListener('orientationchange', fitAll);
+    return () => { ro.disconnect(); window.removeEventListener('orientationchange', fitAll); };
+  }, [fitAll]);
 
   const screenPoint = useCallback((x: number, y: number) => {
     const c = containerRef.current; if (!c) return { x, y };
-    const cr = c.getBoundingClientRect(); return { x: x - cr.left, y: y - cr.top };
+    const cr = c.getBoundingClientRect();
+    return { x: x - cr.left, y: y - cr.top };
   }, []);
 
   useEffect(() => {
@@ -46,8 +63,10 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   }, [onReady, screenPoint]);
 
   useEffect(() => {
-    const c = containerRef.current as (HTMLDivElement & { __ld?: number }) | null; if (!c) return;
-    let p1: { id: number; x: number; y: number } | null = null, p2: { id: number; x: number; y: number } | null = null;
+    const c = containerRef.current as (HTMLDivElement & { __ld?: number }) | null;
+    if (!c) return;
+    let p1: { id: number; x: number; y: number } | null = null;
+    let p2: { id: number; x: number; y: number } | null = null;
     let dragging = false, lastX = 0, lastY = 0;
 
     const setP = (e: PointerEvent) => ({ id: e.pointerId, x: e.clientX, y: e.clientY });
@@ -58,11 +77,14 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
       if (p1 && p2) {
         const dx = p2.x - p1.x, dy = p2.y - p1.y, cx = (p1.x + p2.x) / 2, cy = (p1.y + p2.y) / 2;
         const dist = Math.hypot(dx, dy); c.__ld ??= dist; const factor = dist / c.__ld; c.__ld = dist;
-        const ns = Math.max(min, Math.min(max, scale * factor)); const sp = screenPoint(cx, cy);
+        const ns = Math.max(min, Math.min(max, scale * factor));
+        const sp = screenPoint(cx, cy);
         const ox = (sp.x - tx) / scale, oy = (sp.y - ty) / scale;
         setScale(ns); setTx(sp.x - ox * ns); setTy(sp.y - oy * ns);
       } else if (dragging) {
-        const dx = e.clientX - lastX, dy = e.clientY - lastY; setTx(v => v + dx); setTy(v => v + dy); lastX = e.clientX; lastY = e.clientY;
+        const dx = e.clientX - lastX, dy = e.clientY - lastY;
+        setTx(v => v + dx); setTy(v => v + dy);
+        lastX = e.clientX; lastY = e.clientY;
       }
     };
     const onUp = (e: PointerEvent) => { if (p2 && p2.id === e.pointerId) { p2 = null; c.__ld = undefined; } else if (p1 && p1.id === e.pointerId) { p1 = null; dragging = false; } };
@@ -73,22 +95,21 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
 
   const zoomTo = useCallback((ns: number) => {
     const c = containerRef.current; if (!c) return;
-    const cr = c.getBoundingClientRect(); const sp = { x: cr.width / 2, y: cr.height / 2 };
+    const cr = c.getBoundingClientRect();
+    const sp = { x: cr.width / 2, y: cr.height / 2 };
     const ox = (sp.x - tx) / scale, oy = (sp.y - ty) / scale;
     const cl = Math.max(min, Math.min(max, ns));
     setScale(cl); setTx(sp.x - ox * cl); setTy(sp.y - oy * cl);
   }, [scale, tx, ty]);
 
   const slider = useMemo(() => Math.round(((scale - min) / (max - min)) * 100), [scale]);
-  const onSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseInt(e.target.value, 10); zoomTo(min + (max - min) * (v / 100));
-  };
+  const onSlider = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseInt(e.target.value, 10); zoomTo(min + (max - min) * (v / 100)); };
 
   return (
     <div ref={containerRef} className="map-container w-full h-[100vh] bg-white">
       <div className="pc-zoom">
         <button className="rounded border px-2 py-1 bg-white" onClick={() => zoomTo(scale * 0.85)}>-</button>
-        <input className="vertical" type="range" min={0} max={100} value={slider} onChange={onSlider} />
+        <input className="vertical" type="range" min={0} max={100} value={slider} onChange={onSlider}/>
         <button className="rounded border px-2 py-1 bg-white" onClick={() => zoomTo(scale * 1.15)}>+</button>
       </div>
       <div ref={stageRef} className="map-stage">{children}</div>
@@ -96,3 +117,4 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
     </div>
   );
 }
+
