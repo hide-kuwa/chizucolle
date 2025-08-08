@@ -6,10 +6,11 @@ import PrefectureDetailModal from '@/components/PrefectureDetailModal';
 import LoginModal from '@/components/LoginModal';
 import MergeConflictModal from '@/components/MergeConflictModal';
 import GalleryView from '@/components/GalleryView';
-import type { Prefecture } from '@/types';
+import FloatingActionDock from '@/components/FloatingActionDock';
+import HoverLabelFixed from '@/components/HoverLabelFixed';
+import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
-import PrefHintPopover from '@/components/PrefHintPopover';
 
 declare global {
   interface Window {
@@ -79,6 +80,7 @@ export default function Home() {
     isInitialSetupComplete,
     setIsInitialSetupComplete,
     incrementRegistrationAndCheckAd,
+    updateMemoryStatus,
   } = useGlobalContext();
   const [view, setView] = useState<'map' | 'gallery'>('map');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -88,12 +90,8 @@ export default function Home() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
-  const [prefHint, setPrefHint] = useState<{ code: string | null; name: string | null; x: number; y: number }>({
-    code: null,
-    name: null,
-    x: 0,
-    y: 0,
-  });
+  const [hover, setHover] = useState<{open:boolean; name:string; pt:{x:number;y:number}}>({open:false,name:'',pt:{x:0,y:0}});
+  const [dockAt, setDockAt] = useState<{open:boolean; pt:{x:number;y:number}}>({open:false, pt:{x:0,y:0}});
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
@@ -149,33 +147,45 @@ export default function Home() {
         setSelectedPrefecture(prefecture);
         setIsDetailModalOpen(true);
         setTappedPrefectureId(null);
+        setDockAt({ open: true, pt: { x: position.x - window.scrollX, y: position.y - window.scrollY } });
       } else {
         setTappedPrefectureId(prefecture.id);
         setIsDetailModalOpen(false);
+        setDockAt({ open: false, pt: { x: 0, y: 0 } });
       }
       return;
     }
 
     setSelectedPrefecture(prefecture);
     setIsDetailModalOpen(true);
+    setDockAt({ open: true, pt: { x: position.x - window.scrollX, y: position.y - window.scrollY } });
   };
 
   const handlePrefectureHover = (
     name: string,
     event: React.MouseEvent<SVGPathElement>
   ) => {
-    setPrefHint({ code: name, name, x: event.clientX, y: event.clientY });
+    setHover({ open: true, name, pt: { x: event.clientX, y: event.clientY } });
   };
 
   const handleMouseLeave = () => {
-    setPrefHint({ code: null, name: null, x: 0, y: 0 });
+    setHover((s) => ({ ...s, open: false }));
     setTappedPrefectureId(null);
   };
 
-  const handleMapBackgroundClick = () => {
-    setIsDetailModalOpen(false);
-    setSelectedPrefecture(null);
-    setTappedPrefectureId(null);
+  const closeDock = () => setDockAt({open:false, pt:{x:0,y:0}});
+
+  const updateVisitStatus = (
+    prefectureId: string,
+    status: 'lived' | 'visited' | 'passed' | 'unvisited',
+  ) => {
+    const st: VisitStatus = status === 'passed' ? 'passed_through' : status;
+    return updateMemoryStatus(prefectureId, st);
+  };
+
+  const openPhotoModal = (prefectureId: string) => {
+    const pref = prefectures.find((p) => p.id === prefectureId);
+    if (pref) handleAddPhotoRequest(pref);
   };
 
   return (
@@ -212,13 +222,16 @@ export default function Home() {
               onPrefectureClick={handlePrefectureClick}
               onPrefectureHover={handlePrefectureHover}
               onMouseLeave={handleMouseLeave}
-              onMapBackgroundClick={handleMapBackgroundClick}
+              onMapBackgroundClick={closeDock}
             />
-            <PrefHintPopover
-              code={prefHint.code}
-              name={prefHint.name}
-              x={prefHint.x}
-              y={prefHint.y}
+            <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
+
+            <FloatingActionDock
+              open={dockAt.open && !!selectedPrefecture}
+              pt={dockAt.pt}
+              onSet={(st)=> selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
+              onAddPhoto={()=> selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
+              onClose={closeDock}
             />
           </>
         )}

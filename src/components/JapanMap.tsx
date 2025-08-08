@@ -41,22 +41,18 @@ export default function JapanMap({
       >
         <g>
           {prefectures.map((p) => {
-            const memory = memories.find((m) => m.prefectureId === p.id);
-            const hasPhotos = !!(memory?.photos && memory.photos.length > 0);
             return (
               <path
                 key={p.id}
                 d={p.d}
+                data-pref={p.id}
+                data-name={p.name}
                 fill={getFill(p.id)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrefectureClick(p, e);
-                }}
-                onMouseEnter={(e) => onPrefectureHover(p.name, e)}
-                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-                className={`hover:scale-[1.03] hover:stroke-primary hover:stroke-[1.5px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] ${
-                  hasPhotos ? 'stroke-white stroke-[1.5px]' : 'stroke-white stroke-[0.5px]'
-                }`}
+                onClick={(e)=>{ e.stopPropagation(); onPrefectureClick(p, e); }}
+                onMouseEnter={(e)=> onPrefectureHover(p.name, e)}
+                onMouseMove={(e)=> onPrefectureHover(p.name, e)}
+                style={{ transformBox:'fill-box', transformOrigin:'center' }}
+                className="stroke-white hover:stroke-primary hover:stroke-[1.5px]"
               />
             );
           })}
