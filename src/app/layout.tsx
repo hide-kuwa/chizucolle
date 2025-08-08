@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
+import Auth from "@/components/Auth";
+import LoginFixedTopRight from "@/components/LoginFixedTopRight";
 
 export const metadata: Metadata = {
   title: "地図コレ",
@@ -18,6 +20,9 @@ export default function RootLayout({
       <body className="bg-background text-text-primary">
         <AuthProvider>
           <AppProvider>
+            <LoginFixedTopRight>
+              <Auth />
+            </LoginFixedTopRight>
             {children}
           </AppProvider>
         </AuthProvider>
