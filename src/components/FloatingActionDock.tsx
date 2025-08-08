@@ -15,7 +15,10 @@ export default function FloatingActionDock({open,pt,onSet,onAddPhoto,onClose}:Pr
         <button data-state="visited" className="rounded px-3 py-1 border-2 border-black/60" onClick={()=>onSet('visited')}>訪れた</button>
         <button data-state="unvisited" className="rounded px-3 py-1 border-2 border-black/60" onClick={()=>onSet('unvisited')}>未訪問</button>
         <button data-state="passed" className="rounded px-3 py-1 border-2 border-black/60" onClick={()=>onSet('passed')}>通り過ぎた</button>
+        <button className="rounded px-3 py-1 border-2 border-black/60 bg-white">行きたい</button>
         <button className="rounded px-3 py-1 border-2 border-black/60 bg-white" onClick={onAddPhoto}>写真を追加</button>
+      </div>
+      <div className="flex justify-end mt-2">
         <button className="rounded px-3 py-1 border-2 border-black/60 bg-white" onClick={onClose}>×</button>
       </div>
     </div>

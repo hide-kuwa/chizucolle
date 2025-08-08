@@ -56,7 +56,6 @@ export default function JapanMap({
                 onClick={(e) => { e.stopPropagation(); onPrefectureClick(p, e); }}
                 onMouseEnter={(e) => onPrefectureHover(PREF_JP[p.id], e)}
                 onMouseMove={(e) => onPrefectureHover(PREF_JP[p.id], e)}
-                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 className="stroke-white"
               />
             );
