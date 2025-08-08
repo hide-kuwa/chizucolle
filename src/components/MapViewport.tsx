@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Ready = { container: HTMLDivElement; stage: HTMLDivElement; overlay: HTMLDivElement; screenPoint: (x: number, y: number) => { x: number; y: number } };
@@ -62,7 +63,7 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   }, [onReady, screenPoint]);
 
   useEffect(() => {
-    const c = containerRef.current as (HTMLDivElement & { __ld?: number }) | null; if (!c) return;
+    const c = containerRef.current; if (!c) return;
     let p1: { id: number; x: number; y: number } | null = null, p2: { id: number; x: number; y: number } | null = null;
     let dragging = false, lastX = 0, lastY = 0;
     const setP = (e: PointerEvent) => ({ id: e.pointerId, x: e.clientX, y: e.clientY });
@@ -71,7 +72,7 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
       if (p1 && p1.id === e.pointerId) p1 = { ...p1, x: e.clientX, y: e.clientY }; else if (p2 && p2.id === e.pointerId) p2 = { ...p2, x: e.clientX, y: e.clientY };
       if (p1 && p2) {
         const dx = p2.x - p1.x, dy = p2.y - p1.y, cx = (p1.x + p2.x) / 2, cy = (p1.y + p2.y) / 2;
-        const dist = Math.hypot(dx, dy); c.__ld ??= dist; const factor = dist / c.__ld; c.__ld = dist;
+        const dist = Math.hypot(dx, dy); (c as any).__ld ??= dist; const factor = dist / (c as any).__ld; (c as any).__ld = dist;
         const ns = Math.max(minScale, Math.min(max, scale * factor));
         const sp = screenPoint(cx, cy); const ox = (sp.x - tx) / scale, oy = (sp.y - ty) / scale;
         setScale(ns); setTx(sp.x - ox * ns); setTy(sp.y - oy * ns);
@@ -79,7 +80,7 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
         const dx = e.clientX - lastX, dy = e.clientY - lastY; setTx(v => v + dx); setTy(v => v + dy); lastX = e.clientX; lastY = e.clientY;
       }
     };
-    const onUp = (e: PointerEvent) => { if (p2 && p2.id === e.pointerId) { p2 = null; c.__ld = undefined; } else if (p1 && p1.id === e.pointerId) { p1 = null; dragging = false; } };
+    const onUp = (e: PointerEvent) => { if (p2 && p2.id === e.pointerId) { p2 = null; (c as any).__ld = undefined; } else if (p1 && p1.id === e.pointerId) { p1 = null; dragging = false; } };
     c.addEventListener('pointerdown', onDown); c.addEventListener('pointermove', onMove); c.addEventListener('pointerup', onUp); c.addEventListener('pointercancel', onUp);
     return () => { c.removeEventListener('pointerdown', onDown); c.removeEventListener('pointermove', onMove); c.removeEventListener('pointerup', onUp); c.removeEventListener('pointercancel', onUp); };
   }, [scale, tx, ty, screenPoint, minScale]);
