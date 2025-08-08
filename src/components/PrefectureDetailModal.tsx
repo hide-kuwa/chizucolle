@@ -49,24 +49,13 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
 
   const StatusButton = ({ status, label }: { status: VisitStatus; label: string }) => {
     const isActive = currentStatus === status;
-
-    const colorClasses = () => {
-      switch (status) {
-        case 'visited':
-          return isActive
-            ? 'bg-visited text-emerald-900 shadow-md'
-            : 'bg-visited-light text-emerald-700 hover:bg-visited';
-        default:
-          return isActive
-            ? 'bg-primary text-white shadow-md'
-            : 'bg-background text-text-secondary hover:bg-slate-200';
-      }
-    };
+    const dataState = status === 'passed_through' ? 'passed' : status;
 
     return (
       <button
+        data-state={dataState}
         onClick={() => updateMemoryStatus(prefecture.id, status)}
-        className={`w-full aspect-square flex items-center justify-center rounded-lg p-2 text-sm font-semibold transition-colors ${colorClasses()}`}
+        className={`w-full aspect-square flex items-center justify-center rounded-lg p-2 text-sm font-semibold transition-colors ${isActive ? 'ring-2 ring-black/30' : ''}`}
       >
         {label}
       </button>

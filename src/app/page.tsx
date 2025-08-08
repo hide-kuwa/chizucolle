@@ -1,6 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import Auth from '@/components/Auth';
+import React, { useState, useEffect } from 'react';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
 import PrefectureDetailModal from '@/components/PrefectureDetailModal';
@@ -9,10 +8,8 @@ import MergeConflictModal from '@/components/MergeConflictModal';
 import GalleryView from '@/components/GalleryView';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
-import Tooltip from '@/components/Tooltip';
 import { prefectures } from '@/data/prefectures';
-import { usePrefHover } from '@/hooks/usePrefHover';
-import PrefHoverActions from '@/components/PrefHoverActions';
+import JapanMapWrapper from '@/components/JapanMapWrapper';
 
 declare global {
   interface Window {
@@ -86,32 +83,25 @@ export default function Home() {
   const [view, setView] = useState<'map' | 'gallery'>('map');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
-  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
-  const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [showPrefectureNames, setShowPrefectureNames] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const hover = usePrefHover(mapRef, '[data-pref]');
 
-  const handleHoverOpen = (code: string) => {
+  const openPref = (code: string) => {
     const pref = prefectures.find(p => parseInt(p.id.replace('JP-', ''), 10).toString() === code);
     if (pref) {
+      const el = document.querySelector(`[data-pref="${code}"]`) as HTMLElement | null;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setPopupPosition({ x: rect.right + window.scrollX + 8, y: rect.top + window.scrollY });
+      } else {
+        setPopupPosition(null);
+      }
       setSelectedPrefecture(pref);
       setIsDetailModalOpen(true);
     }
   };
-
-  const handleHoverToggle = (code: string) => {
-    console.log('toggle visited', code);
-  };
-
-  useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -126,34 +116,10 @@ export default function Home() {
     setSelectedPrefecture(null);
     setIsModalOpen(true);
   };
-
-  const handlePrefectureClick = (
-    prefecture: Prefecture,
-    event: React.MouseEvent<SVGPathElement>,
-  ) => {
-    if (isTouchDevice) {
-      if (tappedPrefectureId === prefecture.id) {
-        setTappedPrefectureId(null);
-      } else {
-        setTappedPrefectureId(prefecture.id);
-        return;
-      }
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPopupPosition({ x: rect.right + window.scrollX + 8, y: rect.top + window.scrollY });
-    setSelectedPrefecture(prefecture);
-    setIsDetailModalOpen(true);
-  };
-
   const handleClose = () => {
     setIsDetailModalOpen(false);
     setSelectedPrefecture(null);
     setPopupPosition(null);
-  };
-
-  const handleMapBackgroundClick = () => {
-    setTappedPrefectureId(null);
   };
 
   const handleAddPhotoRequest = (prefecture: Prefecture) => {
@@ -163,19 +129,6 @@ export default function Home() {
     } else {
       setIsLoginModalOpen(true);
     }
-  };
-
-  const handlePrefectureHover = (
-    name: string,
-    event: React.MouseEvent<SVGPathElement>,
-  ) => {
-    if (showPrefectureNames) {
-      setTooltip({ text: name, x: event.clientX + 15, y: event.clientY + 15 });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setTooltip(null);
   };
 
   const handleBackToMap = () => {
@@ -205,54 +158,24 @@ export default function Home() {
                 思い出を追加
               </button>
             )}
-            <Auth />
           </div>
         </nav>
       </header>
 
       <div className="container mx-auto flex-grow p-4 flex flex-col items-center justify-center">
         {view === 'map' && (
-          <>
-            <div className="mb-4 bg-surface p-2 rounded-box shadow-card self-start">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showPrefectureNames}
-                  onChange={() => setShowPrefectureNames(!showPrefectureNames)}
-                  className="form-checkbox h-5 w-5 text-primary"
-                />
-                <span className="text-text-secondary">都道府県名を表示</span>
-              </label>
-            </div>
-
-            <div ref={mapRef} className="relative">
-              <JapanMap
-                memories={memories}
-                onPrefectureClick={(p, e) => handlePrefectureClick(p, e)}
-                onPrefectureHover={handlePrefectureHover}
-                onMouseLeave={handleMouseLeave}
-                tappedPrefectureId={tappedPrefectureId}
-                onMapBackgroundClick={handleMapBackgroundClick}
-              />
-              <PrefHoverActions
-                code={hover.code}
-                name={hover.name}
-                x={hover.x}
-                y={hover.y}
-                onOpen={handleHoverOpen}
-                onToggleVisited={handleHoverToggle}
-              />
-            </div>
-          </>
+          <JapanMapWrapper onOpenPref={openPref}>
+            <JapanMap memories={memories} />
+          </JapanMapWrapper>
         )}
 
-        {view === 'gallery' && selectedPrefecture && (
-          <GalleryView
-            prefecture={selectedPrefecture}
-            onBackToMap={handleBackToMap}
-            onAddPhoto={handleAddPhotoRequest}
-          />
-        )}
+          {view === 'gallery' && selectedPrefecture && (
+            <GalleryView
+              prefecture={selectedPrefecture}
+              onBackToMap={handleBackToMap}
+              onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture)}
+            />
+          )}
       </div>
 
       <FooterAd />
@@ -305,8 +228,6 @@ export default function Home() {
         onSelectLocal={onSelectLocal}
         onSelectRemote={onSelectRemote}
       />
-
-      {tooltip && <Tooltip text={tooltip.text} x={tooltip.x} y={tooltip.y} />}
 
       {isAdModalOpen && <InterstitialAd onClose={() => setIsAdModalOpen(false)} />}
     </main>
