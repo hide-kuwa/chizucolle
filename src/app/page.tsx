@@ -188,6 +188,8 @@ export default function Home() {
     if (pref) handleAddPhotoRequest(pref);
   };
 
+  const hasPhotos = selectedPrefecture ? !!(memories.find(m=>m.prefectureId===selectedPrefecture.id)?.photos?.length) : false;
+
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
       <header className="w-full bg-surface shadow-card">
@@ -229,9 +231,9 @@ export default function Home() {
             <FloatingActionDock
               open={dockAt.open && !!selectedPrefecture}
               pt={dockAt.pt}
+              hasPhotos={hasPhotos}
               onSet={(st)=> selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
               onAddPhoto={()=> selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
-              onClose={closeDock}
             />
           </>
         )}

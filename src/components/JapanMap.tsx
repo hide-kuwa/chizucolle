@@ -15,9 +15,9 @@ const PREF_JP: Record<string, string> = {
 };
 
 const statusColors: Record<VisitStatus, string> = {
-  lived: '#10b981',
-  visited: '#ef4444',
-  passed: '#60a5fa',
+  lived: '#ef4444',
+  visited: '#f59e0b',
+  passed: '#facc15',
   unvisited: '#d1d5db'
 };
 
@@ -29,7 +29,7 @@ export default function JapanMap({
   onMapBackgroundClick,
 }: Props) {
   const getFill = (prefectureId: string): string => {
-    const m = memories.find(v => v.prefectureId === prefectureId);
+    const m = memories.find(x => x.prefectureId === prefectureId);
     if (!m) return statusColors.unvisited;
     return statusColors[m.status] ?? statusColors.unvisited;
   };
