@@ -9,7 +9,7 @@ import GalleryView from '@/components/GalleryView';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
-import JapanMapInteractive from '@/components/JapanMapInteractive';
+import PrefHintPopover from '@/components/PrefHintPopover';
 
 declare global {
   interface Window {
@@ -87,21 +87,18 @@ export default function Home() {
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
+  const [prefHint, setPrefHint] = useState<{ code: string | null; name: string | null; x: number; y: number }>({
+    code: null,
+    name: null,
+    x: 0,
+    y: 0,
+  });
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  const openPref = (code: string) => {
-    const pref = prefectures.find(p => parseInt(p.id.replace('JP-', ''), 10).toString() === code);
-    if (pref) {
-      const el = document.querySelector(`[data-pref="${code}"]`) as HTMLElement | null;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        setPopupPosition({ x: rect.right + window.scrollX + 8, y: rect.top + window.scrollY });
-      } else {
-        setPopupPosition(null);
-      }
-      setSelectedPrefecture(pref);
-      setIsDetailModalOpen(true);
-    }
-  };
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -136,6 +133,51 @@ export default function Home() {
     setSelectedPrefecture(null);
   };
 
+  const handlePrefectureClick = (
+    prefecture: Prefecture,
+    event: React.MouseEvent<SVGPathElement>
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const position = {
+      x: rect.left + window.scrollX + rect.width / 2,
+      y: rect.top + window.scrollY + rect.height / 2,
+    };
+    setPopupPosition(position);
+
+    if (isTouchDevice) {
+      if (tappedPrefectureId === prefecture.id) {
+        setSelectedPrefecture(prefecture);
+        setIsDetailModalOpen(true);
+        setTappedPrefectureId(null);
+      } else {
+        setTappedPrefectureId(prefecture.id);
+        setIsDetailModalOpen(false);
+      }
+      return;
+    }
+
+    setSelectedPrefecture(prefecture);
+    setIsDetailModalOpen(true);
+  };
+
+  const handlePrefectureHover = (
+    name: string,
+    event: React.MouseEvent<SVGPathElement>
+  ) => {
+    setPrefHint({ code: name, name, x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    setPrefHint({ code: null, name: null, x: 0, y: 0 });
+    setTappedPrefectureId(null);
+  };
+
+  const handleMapBackgroundClick = () => {
+    setIsDetailModalOpen(false);
+    setSelectedPrefecture(null);
+    setTappedPrefectureId(null);
+  };
+
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
       <header className="w-full bg-surface shadow-card">
@@ -164,22 +206,21 @@ export default function Home() {
 
       <div className="container mx-auto flex-grow p-4 flex flex-col items-center justify-center">
         {view === 'map' && (
-          <JapanMapInteractive
-            renderMap={() => <JapanMap memories={memories} />}
-            renderClickContent={code => {
-              const pref = prefectures.find(
-                p => parseInt(p.id.replace('JP-', ''), 10).toString() === code
-              );
-              return (
-                <div className="text-sm">
-                  <div className="font-semibold mb-1">都道府県</div>
-                  <div>{pref?.name}</div>
-                </div>
-              );
-            }}
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            onOpenWindow={(code, _initial) => openPref(code)}
-          />
+          <>
+            <JapanMap
+              memories={memories}
+              onPrefectureClick={handlePrefectureClick}
+              onPrefectureHover={handlePrefectureHover}
+              onMouseLeave={handleMouseLeave}
+              onMapBackgroundClick={handleMapBackgroundClick}
+            />
+            <PrefHintPopover
+              code={prefHint.code}
+              name={prefHint.name}
+              x={prefHint.x}
+              y={prefHint.y}
+            />
+          </>
         )}
 
           {view === 'gallery' && selectedPrefecture && (
