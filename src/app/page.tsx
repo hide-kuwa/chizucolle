@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Auth from '@/components/Auth';
 import JapanMap from '@/components/JapanMap';
 import AddMemoryModal from '@/components/AddMemoryModal';
@@ -11,6 +11,8 @@ import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import Tooltip from '@/components/Tooltip';
 import { prefectures } from '@/data/prefectures';
+import { usePrefHover } from '@/hooks/usePrefHover';
+import PrefHoverActions from '@/components/PrefHoverActions';
 
 declare global {
   interface Window {
@@ -92,6 +94,20 @@ export default function Home() {
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const hover = usePrefHover(mapRef, '[data-pref]');
+
+  const handleHoverOpen = (code: string) => {
+    const pref = prefectures.find(p => parseInt(p.id.replace('JP-', ''), 10).toString() === code);
+    if (pref) {
+      setSelectedPrefecture(pref);
+      setIsDetailModalOpen(true);
+    }
+  };
+
+  const handleHoverToggle = (code: string) => {
+    console.log('toggle visited', code);
+  };
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -209,14 +225,24 @@ export default function Home() {
               </label>
             </div>
 
-            <JapanMap
-              memories={memories}
-              onPrefectureClick={(p, e) => handlePrefectureClick(p, e)}
-              onPrefectureHover={handlePrefectureHover}
-              onMouseLeave={handleMouseLeave}
-              tappedPrefectureId={tappedPrefectureId}
-              onMapBackgroundClick={handleMapBackgroundClick}
-            />
+            <div ref={mapRef} className="relative">
+              <JapanMap
+                memories={memories}
+                onPrefectureClick={(p, e) => handlePrefectureClick(p, e)}
+                onPrefectureHover={handlePrefectureHover}
+                onMouseLeave={handleMouseLeave}
+                tappedPrefectureId={tappedPrefectureId}
+                onMapBackgroundClick={handleMapBackgroundClick}
+              />
+              <PrefHoverActions
+                code={hover.code}
+                name={hover.name}
+                x={hover.x}
+                y={hover.y}
+                onOpen={handleHoverOpen}
+                onToggleVisited={handleHoverToggle}
+              />
+            </div>
           </>
         )}
 

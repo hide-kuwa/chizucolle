@@ -25,3 +25,5 @@
   animation: pulseAnimation 0.6s ease-in-out;
 }
 
+
+.pref-hover { filter: brightness(0.9); stroke: rgb(37 99 235); stroke-width: 1.5; }
