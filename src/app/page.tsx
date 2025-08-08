@@ -5,9 +5,9 @@ import AddMemoryModal from '@/components/AddMemoryModal';
 import PrefectureDetailModal from '@/components/PrefectureDetailModal';
 import LoginModal from '@/components/LoginModal';
 import MergeConflictModal from '@/components/MergeConflictModal';
-import GalleryView from '@/components/GalleryView';
 import FloatingActionDock from '@/components/FloatingActionDock';
 import HoverLabelFixed from '@/components/HoverLabelFixed';
+import Header from '@/components/Header';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
@@ -77,12 +77,9 @@ export default function Home() {
     conflict,
     onSelectLocal,
     onSelectRemote,
-    isInitialSetupComplete,
-    setIsInitialSetupComplete,
     incrementRegistrationAndCheckAd,
     updateMemoryStatus,
   } = useGlobalContext();
-  const [view, setView] = useState<'map' | 'gallery'>('map');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -124,11 +121,6 @@ export default function Home() {
     } else {
       setIsLoginModalOpen(true);
     }
-  };
-
-  const handleBackToMap = () => {
-    setView('map');
-    setSelectedPrefecture(null);
   };
 
   const handlePrefectureClick = (
@@ -194,65 +186,31 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
-      <header className="w-full bg-surface shadow-card">
-        <nav className="container mx-auto flex items-center justify-between px-4 py-2">
-          <h1 className="text-2xl font-bold text-primary">地図コレ</h1>
-          <div className="flex items-center space-x-4">
-            {!isInitialSetupComplete && (
-              <button
-                onClick={() => setIsInitialSetupComplete(true)}
-                className="rounded-button bg-primary px-3 py-1 text-white"
-              >
-                初期設定完了
-              </button>
-            )}
-            {user && (
-              <button
-                onClick={openAddModal}
-                className="rounded-button bg-primary px-3 py-1 text-white"
-              >
-                思い出を追加
-              </button>
-            )}
-          </div>
-        </nav>
-      </header>
+      <Header onAddMemory={openAddModal} />
 
-      <div className="container mx-auto flex-grow p-4 flex flex-col items-center justify-center">
-        {view === 'map' && (
-          <>
-            <JapanMap
-              memories={memories}
-              onPrefectureClick={handlePrefectureClick}
-              onPrefectureHover={handlePrefectureHover}
-              onMouseLeave={handleMouseLeave}
-              onMapBackgroundClick={closeDock}
-            />
-            <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
+      <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
+        <JapanMap
+          memories={memories}
+          onPrefectureClick={handlePrefectureClick}
+          onPrefectureHover={handlePrefectureHover}
+          onMouseLeave={handleMouseLeave}
+          onMapBackgroundClick={closeDock}
+        />
+        <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
 
-            <FloatingActionDock
-              open={dockAt.open && !!selectedPrefecture}
-              pt={dockAt.pt}
-              hasPhotos={hasPhotos}
-              onSet={(st)=> selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
-              onAddPhoto={()=> selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
-            />
-          </>
-        )}
-
-          {view === 'gallery' && selectedPrefecture && (
-            <GalleryView
-              prefecture={selectedPrefecture}
-              onBackToMap={handleBackToMap}
-              onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture)}
-            />
-          )}
+        <FloatingActionDock
+          open={dockAt.open && !!selectedPrefecture}
+          pt={dockAt.pt}
+          hasPhotos={hasPhotos}
+          onSet={st => selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
+          onAddPhoto={() => selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
+        />
       </div>
 
       <FooterAd />
 
       <div className="absolute inset-0 pointer-events-none">
-        {view === 'map' && selectedPrefecture && popupPosition && (
+        {selectedPrefecture && popupPosition && (
           <PrefectureDetailModal
             isOpen={isDetailModalOpen}
             prefecture={selectedPrefecture}
@@ -276,7 +234,6 @@ export default function Home() {
             selectedPrefecture || prefectures.find(p => p.id === prefectureId) || null;
           if (pref) {
             setSelectedPrefecture(pref);
-            setView('gallery');
           }
           const shouldShowAd = incrementRegistrationAndCheckAd();
           if (shouldShowAd) {
