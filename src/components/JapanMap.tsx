@@ -29,10 +29,9 @@ export default function JapanMap({
   onMapBackgroundClick,
 }: Props) {
   const getFill = (prefectureId: string): string => {
-    const m = memories.find(x => x.prefectureId === prefectureId);
+    const m = memories.find(v => v.prefectureId === prefectureId);
     if (!m) return statusColors.unvisited;
-    const k = m.status as keyof typeof statusColors;
-    return statusColors[k] ?? statusColors.unvisited;
+    return statusColors[m.status] ?? statusColors.unvisited;
   };
 
   return (

@@ -179,7 +179,7 @@ export default function Home() {
     prefectureId: string,
     status: 'lived' | 'visited' | 'passed' | 'unvisited',
   ) => {
-    const st: VisitStatus = status === 'passed' ? 'passed_through' : status;
+    const st: VisitStatus = status;
     return updateMemoryStatus(prefectureId, st);
   };
 

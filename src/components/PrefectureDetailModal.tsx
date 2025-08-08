@@ -49,7 +49,7 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
 
   const StatusButton = ({ status, label }: { status: VisitStatus; label: string }) => {
     const isActive = currentStatus === status;
-    const dataState = status === 'passed_through' ? 'passed' : status;
+    const dataState = status;
 
     return (
       <button
@@ -80,7 +80,7 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
           <div className="grid grid-cols-2 gap-3">
             <StatusButton status="visited" label="訪れた" />
             <StatusButton status="lived" label="住んでいた" />
-            <StatusButton status="passed_through" label="通り過ぎた" />
+            <StatusButton status="passed" label="通り過ぎた" />
             <StatusButton status="unvisited" label="未訪問" />
           </div>
           <div className="border-t border-background"></div>

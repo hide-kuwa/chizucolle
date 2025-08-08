@@ -17,7 +17,7 @@ export interface Photo {
 }
 
 // Define the possible visit statuses
-export type VisitStatus = 'lived' | 'visited' | 'passed_through' | 'unvisited';
+export type VisitStatus = 'unvisited' | 'visited' | 'passed' | 'lived';
 
 export interface Memory {
   prefectureId: string;
