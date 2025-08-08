@@ -9,7 +9,7 @@ import GalleryView from '@/components/GalleryView';
 import type { Prefecture } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
-import JapanMapWrapper from '@/components/JapanMapWrapper';
+import JapanMapInteractive from '@/components/JapanMapInteractive';
 
 declare global {
   interface Window {
@@ -164,9 +164,22 @@ export default function Home() {
 
       <div className="container mx-auto flex-grow p-4 flex flex-col items-center justify-center">
         {view === 'map' && (
-          <JapanMapWrapper onOpenPref={openPref}>
-            <JapanMap memories={memories} />
-          </JapanMapWrapper>
+          <JapanMapInteractive
+            renderMap={() => <JapanMap memories={memories} />}
+            renderClickContent={code => {
+              const pref = prefectures.find(
+                p => parseInt(p.id.replace('JP-', ''), 10).toString() === code
+              );
+              return (
+                <div className="text-sm">
+                  <div className="font-semibold mb-1">都道府県</div>
+                  <div>{pref?.name}</div>
+                </div>
+              );
+            }}
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onOpenWindow={(code, _initial) => openPref(code)}
+          />
         )}
 
           {view === 'gallery' && selectedPrefecture && (
