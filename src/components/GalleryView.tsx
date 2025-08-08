@@ -42,7 +42,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ prefecture, onBackToMap, onAd
         >
           <option value="lived">住んでいた</option>
           <option value="visited">訪れた</option>
-          <option value="passed_through">通り過ぎた</option>
+          <option value="passed">通り過ぎた</option>
           <option value="unvisited">未訪問</option>
         </select>
       </div>

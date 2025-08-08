@@ -29,7 +29,7 @@ export default function JapanMapInteractive(props:{
     const or = overlayEl.getBoundingClientRect();
     const pt = { x: viewportPt.x - or.left, y: viewportPt.y - or.top };
     setClickAt({ open:true, code, pt });
-    props.onOpenWindow(code, pt);
+    props.onOpenWindow(code, { left: pt.x, top: pt.y });
   });
 
   const hoverPt = toOverlay(hover.pt);
