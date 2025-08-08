@@ -40,3 +40,4 @@ button[data-state="lived"]{background:var(--color-lived);color:#fff}
 button[data-state="visited"]{background:var(--color-visited);color:#fff}
 button[data-state="passed"]{background:var(--color-passed);color:#fff}
 button[data-state="unvisited"]{background:var(--color-unvisited);color:#111}
+[data-pref]:hover{animation:hoverPulse 1s ease-in-out infinite; stroke:#2563eb}
