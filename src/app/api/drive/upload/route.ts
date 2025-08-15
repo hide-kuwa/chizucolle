@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { id, name, webViewLink } = await driveRes.json();
-      uploaded.push({ id, name, url: webViewLink });
+      uploaded.push({ id, name, url: webViewLink, createdAt: new Date().toISOString(), likes: 0 });
     }
 
     return NextResponse.json({ photos: uploaded });

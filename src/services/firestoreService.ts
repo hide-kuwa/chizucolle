@@ -48,5 +48,35 @@ export const firestoreService = {
 
     await setDoc(memoryDocRef, updatedMemory, { merge: true });
   },
+
+  // Update caption for a specific photo within a memory
+  updatePhotoCaption: async (
+    userId: string,
+    prefectureId: string,
+    photoId: string,
+    caption: string,
+  ): Promise<void> => {
+    const memoryDocRef = doc(db, 'users', userId, 'memories', prefectureId);
+    const docSnap = await getDoc(memoryDocRef);
+    if (!docSnap.exists()) return;
+    const memory = docSnap.data() as Memory;
+    const updatedPhotos = memory.photos.map(p => (p.id === photoId ? { ...p, caption } : p));
+    await setDoc(memoryDocRef, { ...memory, photos: updatedPhotos }, { merge: true });
+  },
+
+  // Update likes for a specific photo
+  updatePhotoLikes: async (
+    userId: string,
+    prefectureId: string,
+    photoId: string,
+    likes: number,
+  ): Promise<void> => {
+    const memoryDocRef = doc(db, 'users', userId, 'memories', prefectureId);
+    const docSnap = await getDoc(memoryDocRef);
+    if (!docSnap.exists()) return;
+    const memory = docSnap.data() as Memory;
+    const updatedPhotos = memory.photos.map(p => (p.id === photoId ? { ...p, likes } : p));
+    await setDoc(memoryDocRef, { ...memory, photos: updatedPhotos }, { merge: true });
+  },
 };
 
