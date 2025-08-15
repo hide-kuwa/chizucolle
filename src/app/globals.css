@@ -86,3 +86,5 @@ button[data-photos="yes"]{animation:glow 1.6s ease-in-out infinite}
 :root { --radius: 16px; }
 .btn { @apply px-3 py-2 rounded-xl border hover:bg-neutral-50; }
 .container { @apply mx-auto max-w-6xl px-4; }
+
+html, body, :root { height: 100%; }

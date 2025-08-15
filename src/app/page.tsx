@@ -2,6 +2,10 @@
 import { useMemo } from 'react';
 import AppShell from '@/components/AppShell';
 import FloatingActionDock from '@/components/FloatingActionDock';
+import dynamic from 'next/dynamic';
+import theme from '@/data/theme.json';
+
+const JapanMap = dynamic(() => import('@/components/JapanMap'), { ssr: false });
 
 export default function Page() {
   const stats = useMemo(() => ({ visited: 12, total: 47, updatedAt: '2025-08-16' }), []);
@@ -9,7 +13,15 @@ export default function Page() {
     <AppShell>
       <section className="grid gap-4 md:grid-cols-[2fr_1fr]">
         <div className="rounded-2xl border bg-white shadow-sm p-2 md:p-3">
-          <div className="aspect-[4/3] w-full rounded-xl border bg-neutral-100 grid place-items-center text-neutral-500">JapanMap</div>
+          <div className="relative w-full h-[100svh] rounded-xl border">
+            <JapanMap
+              memories={[]}
+              statuses={theme.statuses}
+              onPrefectureClick={() => {}}
+              onPrefectureHover={() => {}}
+              onMouseLeave={() => {}}
+            />
+          </div>
         </div>
         <aside className="rounded-2xl border bg-white shadow-sm p-4 space-y-4">
           <h2 className="font-semibold">進捗</h2>
