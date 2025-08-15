@@ -1,309 +1,46 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import JapanMap from '@/components/JapanMap';
-import AddMemoryModal from '@/components/AddMemoryModal';
-import PrefectureDetailModal from '@/components/PrefectureDetailModal';
-import LoginModal from '@/components/LoginModal';
-import MergeConflictModal from '@/components/MergeConflictModal';
+import { useMemo } from 'react';
+import AppShell from '@/components/AppShell';
 import FloatingActionDock from '@/components/FloatingActionDock';
-import HoverLabelFixed from '@/components/HoverLabelFixed';
-import Header from '@/components/Header';
-import MapLegend from '@/components/MapLegend';
-import theme from '@/data/theme.json';
-import type { Prefecture, VisitStatus } from '@/types';
-import { useGlobalContext } from '@/context/AppContext';
-import { prefectures } from '@/data/prefectures';
-import TripShareModal from '@/components/TripShareModal';
 
-declare global {
-  interface Window {
-    adsbygoogle?: unknown[];
-  }
-}
-
-const FooterAd: React.FC = () => {
-  useEffect(() => {
-    try {
-      ((window.adsbygoogle = window.adsbygoogle || [])).push({});
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+export default function Page() {
+  const stats = useMemo(() => ({ visited: 12, total: 47, updatedAt: '2025-08-16' }), []);
   return (
-    <div className="flex justify-center py-4">
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-0000000000000000" // TODO: Replace with real Ad Unit ID
-        data-ad-slot="0000000000"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
-    </div>
-  );
-};
-
-const InterstitialAd: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  useEffect(() => {
-    try {
-      ((window.adsbygoogle = window.adsbygoogle || [])).push({});
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="relative rounded-box bg-surface p-4 shadow-card">
-        <button onClick={onClose} className="absolute right-2 top-2">
-          ✕
-        </button>
-        <ins
-          className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client="ca-pub-0000000000000000" // TODO: Replace with real Ad Unit ID
-          data-ad-slot="0000000000"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        ></ins>
-      </div>
-    </div>
-  );
-};
-
-export default function Home() {
-  const {
-    user,
-    memories,
-    addMemory,
-    refreshMemories,
-    signIn,
-    conflict,
-    onSelectLocal,
-    onSelectRemote,
-    incrementRegistrationAndCheckAd,
-    updateMemoryStatus,
-    isRecordingTrip,
-    setIsRecordingTrip,
-    newlyVisited,
-    toggleNewlyVisited,
-    resetTripRecording,
-    updateMultipleMemoryStatuses,
-  } = useGlobalContext();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAdModalOpen, setIsAdModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
-  const [tappedPrefectureId, setTappedPrefectureId] = useState<string | null>(null);
-  const [hover, setHover] = useState<{open:boolean; name:string; pt:{x:number;y:number}}>({open:false,name:'',pt:{x:0,y:0}});
-  const [dockAt, setDockAt] = useState<{open:boolean; pt:{x:number;y:number}}>({open:false, pt:{x:0,y:0}});
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
-  useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src =
-      'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000'; // TODO: Replace with real Ad Unit ID
-    script.async = true;
-    script.crossOrigin = 'anonymous';
-    document.head.appendChild(script);
-  }, []);
-
-  const openAddModal = () => {
-    setSelectedPrefecture(null);
-    setIsModalOpen(true);
-  };
-  const handleClose = () => {
-    setIsDetailModalOpen(false);
-    setSelectedPrefecture(null);
-    setPopupPosition(null);
-  };
-
-  const handleAddPhotoRequest = (prefecture: Prefecture) => {
-    setSelectedPrefecture(prefecture);
-    if (user) {
-      setIsModalOpen(true);
-    } else {
-      setIsLoginModalOpen(true);
-    }
-  };
-
-  const handlePrefectureClick = (
-    prefecture: Prefecture,
-    event: React.MouseEvent<SVGPathElement>
-  ) => {
-    if (isRecordingTrip) {
-      toggleNewlyVisited(prefecture.id);
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const position = {
-      x: rect.left + window.scrollX + rect.width / 2,
-      y: rect.top + window.scrollY + rect.height / 2,
-    };
-    setPopupPosition(position);
-
-    if (isTouchDevice) {
-      if (tappedPrefectureId === prefecture.id) {
-        setSelectedPrefecture(prefecture);
-        setIsDetailModalOpen(true);
-        setTappedPrefectureId(null);
-        setDockAt({ open: true, pt: { x: position.x - window.scrollX, y: position.y - window.scrollY } });
-      } else {
-        setTappedPrefectureId(prefecture.id);
-        setIsDetailModalOpen(false);
-        setDockAt({ open: false, pt: { x: 0, y: 0 } });
-      }
-      return;
-    }
-
-    setSelectedPrefecture(prefecture);
-    setIsDetailModalOpen(true);
-    setDockAt({ open: true, pt: { x: position.x - window.scrollX, y: position.y - window.scrollY } });
-  };
-
-  const handlePrefectureHover = (
-    name: string,
-    event: React.MouseEvent<SVGPathElement>
-  ) => {
-    setHover({ open: true, name, pt: { x: event.clientX, y: event.clientY } });
-  };
-
-  const handleMouseLeave = () => {
-    setHover((s) => ({ ...s, open: false }));
-    setTappedPrefectureId(null);
-  };
-
-  const closeDock = () => setDockAt({open:false, pt:{x:0,y:0}});
-
-  const updateVisitStatus = (prefectureId: string, status: string) => {
-    const st: VisitStatus = status;
-    return updateMemoryStatus(prefectureId, st);
-  };
-
-  const openPhotoModal = (prefectureId: string) => {
-    const pref = prefectures.find((p) => p.id === prefectureId);
-    if (pref) handleAddPhotoRequest(pref);
-  };
-
-  const hasPhotos = selectedPrefecture
-    ? !!(memories.find((m) => m.prefectureId === selectedPrefecture.id)?.photos?.length)
-    : false;
-
-  return (
-    <main className="relative flex min-h-screen flex-col bg-background">
-      {!isRecordingTrip && (
-        <button
-          className="absolute left-4 top-4 z-50 rounded bg-blue-500 px-4 py-2 text-white"
-          onClick={() => {
-            resetTripRecording();
-            setIsRecordingTrip(true);
-          }}
-        >
-          旅を記録する
-        </button>
-      )}
-      {isRecordingTrip && newlyVisited.length > 0 && (
-        <button
-          className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded bg-green-500 px-4 py-2 text-white"
-          onClick={() => setIsShareModalOpen(true)}
-        >
-          この旅をシェアする
-        </button>
-      )}
-      <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
-       <JapanMap
-        memories={memories}
-        statuses={theme.statuses} // 「凡例」のための新しい設計図！
-        onPrefectureClick={handlePrefectureClick}
-        onPrefectureHover={handlePrefectureHover}
-        onMouseLeave={handleMouseLeave}
-        onMapBackgroundClick={closeDock}
-        isRecordingTrip={isRecordingTrip} // 「旅の軌跡モード」のための新しい設計図！
-        selectedPrefectures={newlyVisited} // 「旅の軌跡モード」のための新しい設計図！
+    <AppShell>
+      <section className="grid gap-4 md:grid-cols-[2fr_1fr]">
+        <div className="rounded-2xl border bg-white shadow-sm p-2 md:p-3">
+          <div className="aspect-[4/3] w-full rounded-xl border bg-neutral-100 grid place-items-center text-neutral-500">JapanMap</div>
+        </div>
+        <aside className="rounded-2xl border bg-white shadow-sm p-4 space-y-4">
+          <h2 className="font-semibold">進捗</h2>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-xl border p-4">
+              <div className="text-2xl font-bold">{stats.visited}</div>
+              <div className="text-xs text-neutral-500">訪問済</div>
+            </div>
+            <div className="rounded-xl border p-4">
+              <div className="text-2xl font-bold">{stats.total - stats.visited}</div>
+              <div className="text-xs text-neutral-500">未訪問</div>
+            </div>
+            <div className="rounded-xl border p-4">
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-xs text-neutral-500">合計</div>
+            </div>
+          </div>
+          <div className="text-xs text-neutral-500">最終更新 {stats.updatedAt}</div>
+          <div className="grid gap-2">
+            <button className="px-4 py-2 rounded-xl bg-neutral-900 text-white hover:opacity-90">SNSでシェア</button>
+            <button className="px-4 py-2 rounded-xl border hover:bg-neutral-50">画像を書き出す</button>
+          </div>
+        </aside>
+      </section>
+      <FloatingActionDock
+        onPaint={() => {}}
+        onErase={() => {}}
+        onUndo={() => {}}
+        onRedo={() => {}}
+        onShare={() => {}}
       />
-      {/* 「凡例」を表示するための、新しい部品だ！ */}
-      <MapLegend statuses={theme.statuses} />
-        <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
-
-        <FloatingActionDock
-          open={dockAt.open && !!selectedPrefecture}
-          pt={dockAt.pt}
-          hasPhotos={hasPhotos}
-          statuses={theme.statuses}
-          onSet={st => selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
-          onAddPhoto={() => selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
-        />
-      </div>
-
-      <FooterAd />
-
-      <div className="absolute inset-0 pointer-events-none">
-        {selectedPrefecture && popupPosition && (
-          <PrefectureDetailModal
-            isOpen={isDetailModalOpen}
-            prefecture={selectedPrefecture}
-            onClose={handleClose}
-            onAddPhoto={() => handleAddPhotoRequest(selectedPrefecture!)}
-            position={popupPosition}
-          />
-        )}
-      </div>
-
-      <AddMemoryModal
-        isOpen={isModalOpen}
-        prefectureId={selectedPrefecture?.id}
-        onClose={() => {
-          setIsModalOpen(false);
-        }}
-        onUpload={async (prefectureId, files) => {
-          await addMemory(prefectureId, files);
-          await refreshMemories();
-          const pref =
-            selectedPrefecture || prefectures.find(p => p.id === prefectureId) || null;
-          if (pref) {
-            setSelectedPrefecture(pref);
-          }
-          const shouldShowAd = incrementRegistrationAndCheckAd();
-          if (shouldShowAd) {
-            setIsAdModalOpen(true);
-          }
-        }}
-      />
-
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSignIn={() => {
-          signIn();
-          setIsLoginModalOpen(false);
-        }}
-      />
-
-      <MergeConflictModal
-        isOpen={!!conflict}
-        onSelectLocal={onSelectLocal}
-        onSelectRemote={onSelectRemote}
-      />
-
-      {isAdModalOpen && <InterstitialAd onClose={() => setIsAdModalOpen(false)} />}
-      <TripShareModal
-        isOpen={isShareModalOpen}
-        memories={memories}
-        newlyVisited={newlyVisited}
-        onClose={async () => {
-          setIsShareModalOpen(false);
-          await updateMultipleMemoryStatuses(newlyVisited, 'visited');
-          await refreshMemories();
-          resetTripRecording();
-        }}
-      />
-    </main>
+    </AppShell>
   );
 }
