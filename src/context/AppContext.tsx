@@ -11,7 +11,7 @@ import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const LOCAL_STORAGE_KEY = 'chizucolle_memories';
 
-interface AppContextType {
+  interface AppContextType {
   user: User | null;
   loading: boolean;
   memories: Memory[];
@@ -26,19 +26,28 @@ interface AppContextType {
   isInitialSetupComplete: boolean;
   setIsInitialSetupComplete: (value: boolean) => void;
   registrationsSinceLastAd: number;
-  incrementRegistrationAndCheckAd: () => boolean;
-}
+    incrementRegistrationAndCheckAd: () => boolean;
+    // Trip recording state
+    isRecordingTrip: boolean;
+    setIsRecordingTrip: (value: boolean) => void;
+    newlyVisited: string[];
+    toggleNewlyVisited: (prefectureId: string) => void;
+    resetTripRecording: () => void;
+    updateMultipleMemoryStatuses: (prefectureIds: string[], status: VisitStatus) => Promise<void>;
+  }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ local: Memory[]; remote: Memory[] } | null>(null);
   const [isInitialSetupComplete, setIsInitialSetupComplete] = useState(false);
-  const [registrationsSinceLastAd, setRegistrationsSinceLastAd] = useState(0);
+    const [registrationsSinceLastAd, setRegistrationsSinceLastAd] = useState(0);
+    const [isRecordingTrip, setIsRecordingTrip] = useState(false);
+    const [newlyVisited, setNewlyVisited] = useState<string[]>([]);
 
   const memoriesEqual = (a: Memory[], b: Memory[]) => {
     if (a.length !== b.length) return false;
@@ -55,7 +64,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const updateMemory = useCallback((memory: Memory) => {
+    const updateMemory = useCallback((memory: Memory) => {
     setMemories(prev => {
       const index = prev.findIndex(m => m.prefectureId === memory.prefectureId);
       if (index > -1) {
@@ -65,7 +74,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return [...prev, memory];
     });
-  }, []);
+    }, []);
+
+    const toggleNewlyVisited = useCallback((prefectureId: string) => {
+      setNewlyVisited(prev =>
+        prev.includes(prefectureId)
+          ? prev.filter(id => id !== prefectureId)
+          : [...prev, prefectureId],
+      );
+    }, []);
+
+    const resetTripRecording = useCallback(() => {
+      setIsRecordingTrip(false);
+      setNewlyVisited([]);
+    }, []);
+
+    const updateMultipleMemoryStatuses = useCallback(
+      async (prefectureIds: string[], status: VisitStatus) => {
+        await Promise.all(prefectureIds.map(id => updateMemoryStatus(id, status)));
+      },
+      [updateMemoryStatus],
+    );
 
   useEffect(() => {
     getRedirectResult(auth)
@@ -295,6 +324,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsInitialSetupComplete,
     registrationsSinceLastAd,
     incrementRegistrationAndCheckAd,
+    isRecordingTrip,
+    setIsRecordingTrip,
+    newlyVisited,
+    toggleNewlyVisited,
+    resetTripRecording,
+    updateMultipleMemoryStatuses,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
