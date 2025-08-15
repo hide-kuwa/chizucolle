@@ -8,6 +8,8 @@ import MergeConflictModal from '@/components/MergeConflictModal';
 import FloatingActionDock from '@/components/FloatingActionDock';
 import HoverLabelFixed from '@/components/HoverLabelFixed';
 import Header from '@/components/Header';
+import MapLegend from '@/components/MapLegend';
+import theme from '@/data/theme.json';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
@@ -167,10 +169,7 @@ export default function Home() {
 
   const closeDock = () => setDockAt({open:false, pt:{x:0,y:0}});
 
-  const updateVisitStatus = (
-    prefectureId: string,
-    status: 'lived' | 'visited' | 'passed' | 'unvisited',
-  ) => {
+  const updateVisitStatus = (prefectureId: string, status: string) => {
     const st: VisitStatus = status;
     return updateMemoryStatus(prefectureId, st);
   };
@@ -191,17 +190,20 @@ export default function Home() {
       <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
         <JapanMap
           memories={memories}
+          statuses={theme.statuses}
           onPrefectureClick={handlePrefectureClick}
           onPrefectureHover={handlePrefectureHover}
           onMouseLeave={handleMouseLeave}
           onMapBackgroundClick={closeDock}
         />
+        <MapLegend statuses={theme.statuses} />
         <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
 
         <FloatingActionDock
           open={dockAt.open && !!selectedPrefecture}
           pt={dockAt.pt}
           hasPhotos={hasPhotos}
+          statuses={theme.statuses}
           onSet={st => selectedPrefecture && updateVisitStatus(selectedPrefecture.id, st)}
           onAddPhoto={() => selectedPrefecture && openPhotoModal(selectedPrefecture.id)}
         />

@@ -21,8 +21,15 @@ export interface Photo {
   likes?: number;
 }
 
+export interface Status {
+  id: string;
+  label: string;
+  color: string;
+  action: string;
+}
+
 // Define the possible visit statuses
-export type VisitStatus = 'unvisited' | 'visited' | 'passed' | 'lived';
+export type VisitStatus = string;
 
 export interface Memory {
   prefectureId: string;
