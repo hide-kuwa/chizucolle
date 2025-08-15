@@ -68,8 +68,8 @@ export default function JapanMap({
                 onMouseMove={(e) => onPrefectureHover(PREF_JP[p.id], e)}
                 // アニメーションのためのクラスも、もちろん搭載する！ (codexブランチのカッコいい演出)
                 className={`stroke-white transition-all duration-200 ease-in-out ${
-                  isRecordingTrip && selectedPrefectures.includes(p.id) 
-                    ? 'scale-[1.05] stroke-primary stroke-2' 
+                  isRecordingTrip && selectedPrefectures.includes(p.id)
+                    ? 'scale-[1.05] stroke-primary stroke-2'
                     : 'hover:scale-[1.03]'
                 } ${flashPrefectures.includes(p.id) ? 'animate-pulse' : ''}`}
                 style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
