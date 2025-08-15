@@ -83,3 +83,6 @@ button[data-photos="yes"]{animation:glow 1.6s ease-in-out infinite}
 .map-container{position:relative;overflow:hidden;touch-action:none;user-select:none}
 .map-stage{will-change:transform;transform-origin:0 0}
 .map-overlay{position:absolute;inset:0;z-index:60;pointer-events:none}
+:root { --radius: 16px; }
+.btn { @apply px-3 py-2 rounded-xl border hover:bg-neutral-50; }
+.container { @apply mx-auto max-w-6xl px-4; }
