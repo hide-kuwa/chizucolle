@@ -18,5 +18,13 @@
   },
   "map": {
     "height": "66.67vh"
-  }
+  },
+  "statuses": [
+    { "id": "lived", "label": "住んだ", "color": "#ef4444", "action": "setState" },
+    { "id": "visited", "label": "訪れた", "color": "#f59e0b", "action": "setState" },
+    { "id": "passed", "label": "通った", "color": "#facc15", "action": "setState" },
+    { "id": "unvisited", "label": "未訪問", "color": "#d1d5db", "action": "setState" },
+    { "id": "wish", "label": "行きたい", "color": "#a78bfa", "action": "setState" },
+    { "id": "addPhoto", "label": "写真を追加", "color": "#ffffff", "action": "addPhoto" }
+  ]
 }
