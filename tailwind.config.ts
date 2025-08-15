@@ -12,6 +12,9 @@ export default {
       colors: theme.colors,
       borderRadius: theme.borderRadius,
       boxShadow: theme.boxShadow,
+      height: {
+        'map': theme.map.height,
+      },
     },
   },
   plugins: [],

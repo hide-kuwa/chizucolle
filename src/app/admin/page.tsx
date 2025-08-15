@@ -7,6 +7,9 @@ type Theme = {
   colors: Record<string, string>;
   borderRadius: Record<string, string>;
   boxShadow: Record<string, string>;
+  map: {
+    height: string;
+  };
 };
 
 export default function AdminPage() {
@@ -19,8 +22,13 @@ export default function AdminPage() {
     import('@/data/theme.json').then(data => setTheme(data.default as Theme));
   }, []);
 
-  const handleColorChange = (key: string, value: string) => {
-    setTheme(prev => ({ ...prev!, colors: { ...prev!.colors, [key]: value } }));
+  const handleThemeChange = (category: keyof Theme, key: string, value: string) => {
+    setTheme(prev => {
+      if (!prev) return null;
+      const newTheme = { ...prev };
+      (newTheme[category] as Record<string, string>)[key] = value;
+      return newTheme;
+    });
   };
 
   const handleSave = async () => {
@@ -52,23 +60,38 @@ export default function AdminPage() {
         <input type="password" value={secret} onChange={e => setSecret(e.target.value)} className="border p-1 ml-2" />
       </div>
 
-      <div className="space-y-4">
-        {Object.entries(theme.colors).map(([name, value]) => (
-          <div key={name} className="flex items-center">
-            <label className="w-32">{name}:</label>
-            <input
-              type="color"
-              value={value as string}
-              onChange={(e) => handleColorChange(name, e.target.value)}
-            />
-             <span className="ml-4 p-2" style={{ backgroundColor: value as string }}>{value as string}</span>
-          </div>
-        ))}
-      </div>
+        <h2 className="text-xl font-bold mt-8 mb-4">Colors</h2>
+        <div className="space-y-4">
+          {Object.entries(theme.colors).map(([name, value]) => (
+            <div key={name} className="flex items-center">
+              <label className="w-32">{name}:</label>
+              <input
+                type="color"
+                value={value as string}
+                onChange={(e) => handleThemeChange('colors', name, e.target.value)}
+              />
+               <span className="ml-4 p-2" style={{ backgroundColor: value as string }}>{value as string}</span>
+            </div>
+          ))}
+        </div>
 
-      <button onClick={handleSave} className="mt-8 rounded-button bg-primary text-white py-2 px-6">
-        変更を保存
-      </button>
-    </div>
-  );
-}
+        <h2 className="text-xl font-bold mt-8 mb-4">Map Settings</h2>
+        <div className="space-y-4">
+          <div className="flex items-center">
+            <label className="w-32">Map Height:</label>
+            <input
+              type="text"
+              value={theme.map.height}
+              onChange={(e) => handleThemeChange('map', 'height', e.target.value)}
+              className="border p-1 ml-2"
+              placeholder="e.g., 66.67vh or 800px"
+            />
+          </div>
+        </div>
+
+        <button onClick={handleSave} className="mt-8 rounded-button bg-primary text-white py-2 px-6">
+          変更を保存
+        </button>
+      </div>
+    );
+  }
