@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Header from '@/components/Header';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
 import type { Photo } from '@/types';
@@ -39,7 +38,6 @@ export default function GalleryPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Header />
       <div className="container mx-auto space-y-8 p-4">
         {prefectures.map(pref => {
           const memory = memories.find(m => m.prefectureId === pref.id);

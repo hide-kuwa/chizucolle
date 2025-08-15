@@ -185,8 +185,6 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
-      <Header onAddMemory={openAddModal} />
-
       <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
         <JapanMap
           memories={memories}

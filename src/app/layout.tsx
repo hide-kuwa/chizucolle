@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
-import Auth from "@/components/Auth";
-import LoginFixedTopRight from "@/components/LoginFixedTopRight";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "地図コレ",
@@ -24,14 +22,17 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background text-text-primary">
-        <AuthProvider>
-          <AppProvider>
-            <LoginFixedTopRight>
-              <Auth />
-            </LoginFixedTopRight>
-            {children}
-          </AppProvider>
-        </AuthProvider>
+        <AppProvider>
+          <div className="flex h-screen overflow-hidden">
+            {/* PC (md以上) でのみSidebarを表示 */}
+            <div className="hidden md:block">
+              <Sidebar />
+            </div>
+            <main className="flex-1 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+        </AppProvider>
       </body>
     </html>
   );
