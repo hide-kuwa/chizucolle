@@ -1,49 +1,58 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Header from '@/components/Header';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
+import type { Photo } from '@/types';
+import useHorizontalScroll from '@/hooks/useHorizontalScroll';
+
+function PhotoRow({ photos }: { photos: Photo[] }) {
+  const { ref, onMouseDown, onMouseLeave, onMouseUp, onMouseMove, onWheel } =
+    useHorizontalScroll<HTMLDivElement>();
+
+  return (
+    <div
+      ref={ref}
+      onMouseDown={onMouseDown}
+      onMouseLeave={onMouseLeave}
+      onMouseUp={onMouseUp}
+      onMouseMove={onMouseMove}
+      onWheel={onWheel}
+      className="flex gap-2 overflow-x-auto pb-2"
+    >
+      {photos.map(photo => (
+        <img
+          key={photo.id}
+          src={photo.url}
+          alt={photo.name}
+          loading="lazy"
+          className="h-32 w-48 flex-shrink-0 rounded-lg object-cover"
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function GalleryPage() {
   const { memories } = useGlobalContext();
-  const photos = memories.flatMap(m =>
-    m.photos.map(p => ({ ...p, prefectureId: m.prefectureId }))
-  );
-
-  const [visibleCount, setVisibleCount] = useState(20);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 200
-      ) {
-        setVisibleCount(v => Math.min(v + 20, photos.length));
-      }
-    };
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [photos.length]);
 
   return (
     <main className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto p-4">
-        <div className="columns-2 gap-4 md:columns-3 lg:columns-4">
-          {photos.slice(0, visibleCount).map(photo => (
-            <div key={photo.id} className="mb-4 break-inside-avoid-column">
-              <img
-                src={photo.url}
-                alt={photo.name}
-                className="w-full rounded-lg object-cover"
-              />
-              <p className="mt-1 text-sm text-text-secondary">
-                {prefectures.find(p => p.id === photo.prefectureId)?.name || ''}
-              </p>
-            </div>
-          ))}
-        </div>
+      <div className="container mx-auto space-y-8 p-4">
+        {prefectures.map(pref => {
+          const memory = memories.find(m => m.prefectureId === pref.id);
+          if (!memory || memory.photos.length === 0) return null;
+          return (
+            <section key={pref.id} className="space-y-2">
+              <h2 className="text-lg font-semibold text-text-primary">
+                {pref.name}
+              </h2>
+              <PhotoRow photos={memory.photos} />
+            </section>
+          );
+        })}
       </div>
     </main>
   );
