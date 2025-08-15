@@ -7,7 +7,6 @@ import LoginModal from '@/components/LoginModal';
 import MergeConflictModal from '@/components/MergeConflictModal';
 import FloatingActionDock from '@/components/FloatingActionDock';
 import HoverLabelFixed from '@/components/HoverLabelFixed';
-import Header from '@/components/Header';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
@@ -186,8 +185,6 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
-      <Header onAddMemory={openAddModal} />
-
       <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
         <JapanMap
           memories={memories}
