@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export interface User {
   uid: string;
   displayName: string | null;
@@ -14,6 +16,9 @@ export interface Photo {
   id: string;
   url: string;
   name: string;
+  createdAt?: string | Timestamp;
+  caption?: string;
+  likes?: number;
 }
 
 // Define the possible visit statuses

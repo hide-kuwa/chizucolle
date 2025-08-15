@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, position }: Props) {
-  const { memories, updateMemoryStatus } = useGlobalContext();
+  const { user, memories, updateMemoryStatus } = useGlobalContext();
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const getModalStyle = () => {
@@ -134,6 +134,8 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
       </div>
       {viewerIndex !== null && photos.length > 0 && (
         <PhotoViewer
+          userId={user?.uid || ''}
+          prefectureId={prefecture.id}
           photos={photos}
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
