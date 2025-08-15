@@ -13,6 +13,7 @@ import theme from '@/data/theme.json';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import { prefectures } from '@/data/prefectures';
+import TripShareModal from '@/components/TripShareModal';
 
 declare global {
   interface Window {
@@ -81,6 +82,12 @@ export default function Home() {
     onSelectRemote,
     incrementRegistrationAndCheckAd,
     updateMemoryStatus,
+    isRecordingTrip,
+    setIsRecordingTrip,
+    newlyVisited,
+    toggleNewlyVisited,
+    resetTripRecording,
+    updateMultipleMemoryStatuses,
   } = useGlobalContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrefecture, setSelectedPrefecture] = useState<Prefecture | null>(null);
@@ -92,6 +99,7 @@ export default function Home() {
   const [hover, setHover] = useState<{open:boolean; name:string; pt:{x:number;y:number}}>({open:false,name:'',pt:{x:0,y:0}});
   const [dockAt, setDockAt] = useState<{open:boolean; pt:{x:number;y:number}}>({open:false, pt:{x:0,y:0}});
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -129,6 +137,11 @@ export default function Home() {
     prefecture: Prefecture,
     event: React.MouseEvent<SVGPathElement>
   ) => {
+    if (isRecordingTrip) {
+      toggleNewlyVisited(prefecture.id);
+      return;
+    }
+
     const rect = event.currentTarget.getBoundingClientRect();
     const position = {
       x: rect.left + window.scrollX + rect.width / 2,
@@ -185,16 +198,38 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-background">
+      {!isRecordingTrip && (
+        <button
+          className="absolute left-4 top-4 z-50 rounded bg-blue-500 px-4 py-2 text-white"
+          onClick={() => {
+            resetTripRecording();
+            setIsRecordingTrip(true);
+          }}
+        >
+          旅を記録する
+        </button>
+      )}
+      {isRecordingTrip && newlyVisited.length > 0 && (
+        <button
+          className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded bg-green-500 px-4 py-2 text-white"
+          onClick={() => setIsShareModalOpen(true)}
+        >
+          この旅をシェアする
+        </button>
+      )}
       <div className="container mx-auto flex flex-grow flex-col items-center justify-center p-4">
-        <JapanMap
-          memories={memories}
-          statuses={theme.statuses}
-          onPrefectureClick={handlePrefectureClick}
-          onPrefectureHover={handlePrefectureHover}
-          onMouseLeave={handleMouseLeave}
-          onMapBackgroundClick={closeDock}
-        />
-        <MapLegend statuses={theme.statuses} />
+       <JapanMap
+        memories={memories}
+        statuses={theme.statuses} // 「凡例」のための新しい設計図！
+        onPrefectureClick={handlePrefectureClick}
+        onPrefectureHover={handlePrefectureHover}
+        onMouseLeave={handleMouseLeave}
+        onMapBackgroundClick={closeDock}
+        isRecordingTrip={isRecordingTrip} // 「旅の軌跡モード」のための新しい設計図！
+        selectedPrefectures={newlyVisited} // 「旅の軌跡モード」のための新しい設計図！
+      />
+      {/* 「凡例」を表示するための、新しい部品だ！ */}
+      <MapLegend statuses={theme.statuses} />
         <HoverLabelFixed open={hover.open} name={hover.name} pt={hover.pt} />
 
         <FloatingActionDock
@@ -258,6 +293,17 @@ export default function Home() {
       />
 
       {isAdModalOpen && <InterstitialAd onClose={() => setIsAdModalOpen(false)} />}
+      <TripShareModal
+        isOpen={isShareModalOpen}
+        memories={memories}
+        newlyVisited={newlyVisited}
+        onClose={async () => {
+          setIsShareModalOpen(false);
+          await updateMultipleMemoryStatuses(newlyVisited, 'visited');
+          await refreshMemories();
+          resetTripRecording();
+        }}
+      />
     </main>
   );
 }
