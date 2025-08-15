@@ -97,7 +97,7 @@ export default function MapViewport({ children, overlayChildren, onReady }: Prop
   const onSlider = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseInt(e.target.value, 10); zoomTo(minScale + (max - minScale) * (v / 100)); };
 
   return (
-    <div ref={containerRef} className="map-container w-full h-[100vh] bg-white">
+    <div ref={containerRef} className="map-container w-full h-map bg-white">
       <div className="pc-zoom">
         <button className="rounded border px-2 py-1 bg-white" onClick={() => zoomTo(scale * 0.85)}>-</button>
         <input className="vertical" type="range" min={0} max={100} value={slider} onChange={onSlider} />
