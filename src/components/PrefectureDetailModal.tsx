@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Prefecture, VisitStatus } from '@/types';
 import { useGlobalContext } from '@/context/AppContext';
 import PhotoViewer from './PhotoViewer';
+import useHorizontalScroll from '@/hooks/useHorizontalScroll';
 
 interface Props {
   prefecture: Prefecture;
@@ -16,6 +17,14 @@ interface Props {
 export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onAddPhoto, position }: Props) {
   const { user, memories, updateMemoryStatus } = useGlobalContext();
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const {
+    ref: stripRef,
+    onMouseDown,
+    onMouseLeave,
+    onMouseUp,
+    onMouseMove,
+    onWheel,
+  } = useHorizontalScroll<HTMLDivElement>();
 
   const getModalStyle = () => {
     const modalWidth = 320; // w-80
@@ -81,14 +90,30 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
         </div>
 
         <div className="space-y-3 p-4">
+          <div className="grid grid-cols-4 gap-2">
+            <StatusButton status="visited" label="訪れた" />
+            <StatusButton status="lived" label="住んでいた" />
+            <StatusButton status="passed" label="通り過ぎた" />
+            <StatusButton status="unvisited" label="未訪問" />
+          </div>
+
           {photos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {photos.slice(0, 4).map((photo, idx) => (
+            <div
+              ref={stripRef}
+              onMouseDown={onMouseDown}
+              onMouseLeave={onMouseLeave}
+              onMouseUp={onMouseUp}
+              onMouseMove={onMouseMove}
+              onWheel={onWheel}
+              className="flex gap-2 overflow-x-auto py-2"
+            >
+              {photos.map((photo, idx) => (
                 <img
                   key={photo.id}
                   src={photo.url}
                   alt={photo.name}
-                  className="h-24 w-full cursor-pointer rounded-md object-cover"
+                  loading="lazy"
+                  className="h-24 w-24 flex-shrink-0 cursor-pointer rounded-md object-cover"
                   onClick={() => setViewerIndex(idx)}
                 />
               ))}
@@ -122,14 +147,6 @@ export default function PrefectureDetailModal({ prefecture, isOpen, onClose, onA
               </Link>
             </div>
           )}
-
-          <div className="border-t border-background"></div>
-          <div className="grid grid-cols-4 gap-2">
-            <StatusButton status="visited" label="訪れた" />
-            <StatusButton status="lived" label="住んでいた" />
-            <StatusButton status="passed" label="通り過ぎた" />
-            <StatusButton status="unvisited" label="未訪問" />
-          </div>
         </div>
       </div>
       {viewerIndex !== null && photos.length > 0 && (
