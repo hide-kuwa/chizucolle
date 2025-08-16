@@ -1,6 +1,7 @@
 'use client';
 import type { Memory, Prefecture, Status } from '@/types';
 import { prefectures } from '../data/prefectures';
+import { openPrefectureMenu } from '@/lib/prefectureMenuBus';
 
 // 二つの未来の機能を、すべて受け入れる最強の Props を定義！
 type Props = {
@@ -63,7 +64,7 @@ export default function JapanMap({
                 data-pref={p.id}
                 data-name={PREF_JP[p.id]}
                 fill={getFill(p.id)}
-                onClick={(e) => { e.stopPropagation(); onPrefectureClick(p, e); }}
+                onClick={(e) => { e.stopPropagation(); openPrefectureMenu({ id: p.id, x: e.clientX, y: e.clientY }); onPrefectureClick(p, e); }}
                 onMouseEnter={(e) => onPrefectureHover(PREF_JP[p.id], e)}
                 onMouseMove={(e) => onPrefectureHover(PREF_JP[p.id], e)}
                 // アニメーションのためのクラスも、もちろん搭載する！ (codexブランチのカッコいい演出)
