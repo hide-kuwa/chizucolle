@@ -3,13 +3,13 @@
 import { useGlobalContext } from '@/context/AppContext';
 
 export default function AuthButton() {
-  const { user, loading, signIn, signOut } = useGlobalContext();
+  const { user, loading, signIn } = useGlobalContext();
 
   if (loading) {
     return (
-      <button className="px-3 py-2 rounded-xl border bg-white/80 backdrop-blur">
+      <div className="px-3 py-2 rounded-full border bg-white/80">
         読み込み中
-      </button>
+      </div>
     );
   }
 
@@ -25,25 +25,12 @@ export default function AuthButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="h-10 w-10 rounded-full border bg-white/90 backdrop-blur overflow-hidden grid place-items-center">
       {user.photoURL ? (
-        <img
-          src={user.photoURL}
-          alt=""
-          width={28}
-          height={28}
-          className="rounded-full"
-        />
+        <img src={user.photoURL} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="w-7 h-7 rounded-full bg-neutral-200" />
+        <div className="text-sm">🙂</div>
       )}
-      <button
-        onClick={signOut}
-        className="px-3 py-2 rounded-xl border hover:bg-neutral-50"
-      >
-        ログアウト
-      </button>
     </div>
   );
 }
-

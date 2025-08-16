@@ -3,7 +3,6 @@ import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import Sidebar from "@/components/Sidebar";
 import AuthButton from "@/components/AuthButton";
-import PrefectureActionMenu from "@/components/PrefectureActionMenu";
 
 export const metadata: Metadata = {
   title: "地図コレ",
@@ -36,7 +35,6 @@ export default function RootLayout({
               {children}
             </main>
           </div>
-          <PrefectureActionMenu />
         </AppProvider>
       </body>
     </html>

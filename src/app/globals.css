@@ -87,4 +87,14 @@ button[data-photos="yes"]{animation:glow 1.6s ease-in-out infinite}
 .btn { @apply px-3 py-2 rounded-xl border hover:bg-neutral-50; }
 .container { @apply mx-auto max-w-6xl px-4; }
 
-html, body, :root { height: 100%; }
+  html, body, :root { height: 100%; }
+
+  .map-fit { display: grid; place-items: center; }
+  .map-fit > svg,
+  .map-fit > canvas,
+  .map-fit img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+  }
