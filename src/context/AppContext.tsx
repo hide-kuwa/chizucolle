@@ -11,7 +11,7 @@ import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const LOCAL_STORAGE_KEY = 'chizucolle_memories';
 
-  interface AppContextType {
+interface AppContextType {
   user: User | null;
   loading: boolean;
   memories: Memory[];
@@ -26,28 +26,27 @@ const LOCAL_STORAGE_KEY = 'chizucolle_memories';
   isInitialSetupComplete: boolean;
   setIsInitialSetupComplete: (value: boolean) => void;
   registrationsSinceLastAd: number;
-    incrementRegistrationAndCheckAd: () => boolean;
-    // Trip recording state
-    isRecordingTrip: boolean;
-    setIsRecordingTrip: (value: boolean) => void;
-    newlyVisited: string[];
-    toggleNewlyVisited: (prefectureId: string) => void;
-    resetTripRecording: () => void;
-    updateMultipleMemoryStatuses: (prefectureIds: string[], status: VisitStatus) => Promise<void>;
-  }
+  incrementRegistrationAndCheckAd: () => boolean;
+  isRecordingTrip: boolean;
+  setIsRecordingTrip: (value: boolean) => void;
+  newlyVisited: string[];
+  toggleNewlyVisited: (prefectureId: string) => void;
+  resetTripRecording: () => void;
+  updateMultipleMemoryStatuses: (prefectureIds: string[], status: VisitStatus) => Promise<void>;
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-  export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [driveAccessToken, setDriveAccessToken] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ local: Memory[]; remote: Memory[] } | null>(null);
   const [isInitialSetupComplete, setIsInitialSetupComplete] = useState(false);
-    const [registrationsSinceLastAd, setRegistrationsSinceLastAd] = useState(0);
-    const [isRecordingTrip, setIsRecordingTrip] = useState(false);
-    const [newlyVisited, setNewlyVisited] = useState<string[]>([]);
+  const [registrationsSinceLastAd, setRegistrationsSinceLastAd] = useState(0);
+  const [isRecordingTrip, setIsRecordingTrip] = useState(false);
+  const [newlyVisited, setNewlyVisited] = useState<string[]>([]);
 
   const memoriesEqual = (a: Memory[], b: Memory[]) => {
     if (a.length !== b.length) return false;
@@ -64,7 +63,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
     });
   };
 
-    const updateMemory = useCallback((memory: Memory) => {
+  const updateMemory = useCallback((memory: Memory) => {
     setMemories(prev => {
       const index = prev.findIndex(m => m.prefectureId === memory.prefectureId);
       if (index > -1) {
@@ -74,27 +73,57 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
       }
       return [...prev, memory];
     });
-    }, []);
+  }, []);
 
-    const toggleNewlyVisited = useCallback((prefectureId: string) => {
-      setNewlyVisited(prev =>
-        prev.includes(prefectureId)
-          ? prev.filter(id => id !== prefectureId)
-          : [...prev, prefectureId],
-      );
-    }, []);
+  const toggleNewlyVisited = useCallback((prefectureId: string) => {
+    setNewlyVisited(prev => (prev.includes(prefectureId) ? prev.filter(id => id !== prefectureId) : [...prev, prefectureId]));
+  }, []);
 
-    const resetTripRecording = useCallback(() => {
-      setIsRecordingTrip(false);
-      setNewlyVisited([]);
-    }, []);
+  const resetTripRecording = useCallback(() => {
+    setIsRecordingTrip(false);
+    setNewlyVisited([]);
+  }, []);
 
-    const updateMultipleMemoryStatuses = useCallback(
-      async (prefectureIds: string[], status: VisitStatus) => {
-        await Promise.all(prefectureIds.map(id => updateMemoryStatus(id, status)));
-      },
-      [updateMemoryStatus],
-    );
+  const updateMemoryStatus = useCallback(
+    async (prefectureId: string, status: VisitStatus) => {
+      if (user) {
+        setLoading(true);
+        try {
+          await firestoreService.updateMemoryStatus(user.uid, prefectureId, status);
+          updateMemory({
+            prefectureId,
+            status,
+            photos: memories.find(m => m.prefectureId === prefectureId)?.photos || [],
+          });
+        } catch (error) {
+          console.error('Failed to update memory status:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        const currentMemories = [...memories];
+        const index = currentMemories.findIndex(m => m.prefectureId === prefectureId);
+        let newMemory: Memory;
+        if (index > -1) {
+          newMemory = { ...currentMemories[index], status };
+          currentMemories[index] = newMemory;
+        } else {
+          newMemory = { prefectureId, status, photos: [] };
+          currentMemories.push(newMemory);
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentMemories));
+        updateMemory(newMemory);
+      }
+    },
+    [user, memories, updateMemory],
+  );
+
+  const updateMultipleMemoryStatuses = useCallback(
+    async (prefectureIds: string[], status: VisitStatus) => {
+      await Promise.all(prefectureIds.map(id => updateMemoryStatus(id, status)));
+    },
+    [updateMemoryStatus],
+  );
 
   useEffect(() => {
     getRedirectResult(auth)
@@ -136,17 +165,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
         if (localMemories.length && firestoreMemories.length === 0) {
           await Promise.all(
-            localMemories.map(memory =>
-              setDoc(doc(db, 'users', authUser.uid, 'memories', memory.prefectureId), memory),
-            ),
+            localMemories.map(memory => setDoc(doc(db, 'users', authUser.uid, 'memories', memory.prefectureId), memory)),
           );
           localStorage.removeItem(LOCAL_STORAGE_KEY);
           setMemories(localMemories);
-        } else if (
-          localMemories.length &&
-          firestoreMemories.length &&
-          !memoriesEqual(localMemories, firestoreMemories)
-        ) {
+        } else if (localMemories.length && firestoreMemories.length && !memoriesEqual(localMemories, firestoreMemories)) {
           setMemories(localMemories);
           setConflict({ local: localMemories, remote: firestoreMemories });
         } else {
@@ -181,7 +204,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
     try {
       const token = await authService.signInWithGoogle();
       if (token) setDriveAccessToken(token);
-      // onAuthStateChanged will update state
     } catch (error) {
       console.error('Sign in failed', error);
       setLoading(false);
@@ -191,7 +213,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
   const signOut = async () => {
     setLoading(true);
     await authService.signOut();
-    // onAuthStateChanged will handle cleanup
   };
 
   const incrementRegistrationAndCheckAd = useCallback(() => {
@@ -242,50 +263,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
     setMemories(fetched);
   }, [user]);
 
-  const updateMemoryStatus = useCallback(
-    async (prefectureId: string, status: VisitStatus) => {
-      if (user) {
-        setLoading(true);
-        try {
-          await firestoreService.updateMemoryStatus(user.uid, prefectureId, status);
-          updateMemory({ prefectureId, status, photos: memories.find(m => m.prefectureId === prefectureId)?.photos || [] });
-        } catch (error) {
-          console.error('Failed to update memory status:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        const currentMemories = [...memories];
-        const index = currentMemories.findIndex(m => m.prefectureId === prefectureId);
-        let newMemory: Memory;
-        if (index > -1) {
-          newMemory = { ...currentMemories[index], status };
-          currentMemories[index] = newMemory;
-        } else {
-          newMemory = { prefectureId, status, photos: [] };
-          currentMemories.push(newMemory);
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentMemories));
-        updateMemory(newMemory);
-      }
-    },
-    [user, memories, updateMemory],
-  );
-
   const onSelectLocal = useCallback(async () => {
     if (!user || !conflict) return;
     setLoading(true);
     try {
-      await Promise.all(
-        conflict.remote.map(remote =>
-          deleteDoc(doc(db, 'users', user.uid, 'memories', remote.prefectureId)),
-        ),
-      );
-      await Promise.all(
-        conflict.local.map(memory =>
-          setDoc(doc(db, 'users', user.uid, 'memories', memory.prefectureId), memory),
-        ),
-      );
+      await Promise.all(conflict.remote.map(remote => deleteDoc(doc(db, 'users', user.uid, 'memories', remote.prefectureId))));
+      await Promise.all(conflict.local.map(memory => setDoc(doc(db, 'users', user.uid, 'memories', memory.prefectureId), memory)));
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       setMemories(conflict.local);
       setConflict(null);
@@ -308,7 +291,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
     }
   }, [conflict]);
 
-  const value = {
+  const value: AppContextType = {
     user,
     loading,
     memories,
@@ -342,4 +325,3 @@ export const useGlobalContext = () => {
   }
   return context;
 };
-
